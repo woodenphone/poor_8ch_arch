@@ -41,8 +41,8 @@ def table_factory_boards():# Boards table
     see https://stackoverflow.com/questions/19163911/dynamically-setting-tablename-for-sharding-in-sqlalchemy
     TODO: Sane database design
     """
-    table_name = 'boards'
-    logging.debug('Naming the board table {0!r}'.format(table_name))
+    table_name = u'boards'
+    logging.debug(u'Naming the board table {0!r}'.format(table_name))
     class Boards(Base):
         __tablename__ = table_name
         # From: https://github.com/bibanon/py8chan/blob/master/py8chan/board.py#L76
@@ -66,10 +66,10 @@ def table_factory_threads(board_name):# Threads table
     Make the 'x_threads' table for an 8chan board.
     see https://stackoverflow.com/questions/19163911/dynamically-setting-tablename-for-sharding-in-sqlalchemy
     TODO: Sane database design"""
-    logging.debug('table_factory_threads() args={0!r}'.format(locals()))# Record arguments.
-    assert(type(board_name) in [str, unicode])
-    table_name = '{0}_threads'.format(board_name)
-    logging.debug('Naming the thread table {0!r}'.format(table_name))
+    logging.debug(u'table_factory_threads() args={0!r}'.format(locals()))# Record arguments.
+    assert(type(board_name) in [unicode])
+    table_name = u'{0}_threads'.format(board_name)
+    logging.debug(u'Naming the thread table {0!r}'.format(table_name))
     class Threads(Base):
         __tablename__ = table_name
         # From: https://github.com/bibanon/py8chan/blob/master/py8chan/thread.py#L10
@@ -79,11 +79,11 @@ def table_factory_threads(board_name):# Threads table
         t_last_reply_id = sqlalchemy.Column(sqlalchemy.Integer, nullable=True)
         # py8chan.Thread class attributes
         t_closed = sqlalchemy.Column(sqlalchemy.Boolean, nullable=True)
-        t_sticky = sqlalchemy.Column(sqlalchemy.String, nullable=True)
-        t_topic = sqlalchemy.Column(sqlalchemy.String, nullable=True)
-        t_posts = sqlalchemy.Column(sqlalchemy.String, nullable=True)# TODO FIXME (post-to-thread association)
-        t_all_posts = sqlalchemy.Column(sqlalchemy.String, nullable=True)# TODO FIXME (post-to-thread association)
-        t_url = sqlalchemy.Column(sqlalchemy.String, nullable=True)
+        t_sticky = sqlalchemy.Column(sqlalchemy.Unicode, nullable=True)
+        t_topic = sqlalchemy.Column(sqlalchemy.Unicode, nullable=True)
+        t_posts = sqlalchemy.Column(sqlalchemy.Unicode, nullable=True)# TODO FIXME (post-to-thread association)
+        t_all_posts = sqlalchemy.Column(sqlalchemy.Unicode, nullable=True)# TODO FIXME (post-to-thread association)
+        t_url = sqlalchemy.Column(sqlalchemy.Unicode, nullable=True)
         # 'Unused' attributes:
         # Misc recordkeeping: (internal use and also for exporting dumps more easily)
         row_created = sqlalchemy.Column(sqlalchemy.DateTime, nullable=True, default=datetime.datetime.utcnow)
@@ -99,10 +99,10 @@ def table_factory_posts(board_name):# Posts table
     Make the 'x_posts' table for an 8chan board.
     see https://stackoverflow.com/questions/19163911/dynamically-setting-tablename-for-sharding-in-sqlalchemy
     TODO: Sane database design"""
-    logging.debug('table_factory_posts() args={0!r}'.format(locals()))# Record arguments.
-    assert(type(board_name) in [str, unicode])
-    table_name = '{0}_posts'.format(board_name)
-    logging.debug('Naming the posts table {0!r}'.format(table_name))
+    logging.debug(u'table_factory_posts() args={0!r}'.format(locals()))# Record arguments.
+    assert(type(board_name) in [unicode])
+    table_name = u'{0}_posts'.format(board_name)
+    logging.debug(u'Naming the posts table {0!r}'.format(table_name))
     class Posts(Base):
         __tablename__ = table_name
         # From: https://github.com/bibanon/py8chan/blob/master/py8chan/post.py#L13
@@ -111,13 +111,13 @@ def table_factory_posts(board_name):# Posts table
         # py8chan.Post class attributes
         p_post_id = sqlalchemy.Column(sqlalchemy.Integer, nullable=True)
         p_poster_id = sqlalchemy.Column(sqlalchemy.Integer, nullable=True)
-        p_name = sqlalchemy.Column(sqlalchemy.String, nullable=True)
-        p_email = sqlalchemy.Column(sqlalchemy.String, nullable=True)
-        p_tripcode = sqlalchemy.Column(sqlalchemy.String, nullable=True)
-        p_subject = sqlalchemy.Column(sqlalchemy.String, nullable=True)
-        p_comment = sqlalchemy.Column(sqlalchemy.String, nullable=True)
-        p_html_comment = sqlalchemy.Column(sqlalchemy.String, nullable=True)
-        p_text_comment = sqlalchemy.Column(sqlalchemy.String, nullable=True)
+        p_name = sqlalchemy.Column(sqlalchemy.Unicode, nullable=True)
+        p_email = sqlalchemy.Column(sqlalchemy.Unicode, nullable=True)
+        p_tripcode = sqlalchemy.Column(sqlalchemy.Unicode, nullable=True)
+        p_subject = sqlalchemy.Column(sqlalchemy.Unicode, nullable=True)
+        p_comment = sqlalchemy.Column(sqlalchemy.Unicode, nullable=True)
+        p_html_comment = sqlalchemy.Column(sqlalchemy.Unicode, nullable=True)
+        p_text_comment = sqlalchemy.Column(sqlalchemy.Unicode, nullable=True)
         p_is_op = sqlalchemy.Column(sqlalchemy.Boolean, nullable=True)
         p_timestamp = sqlalchemy.Column(sqlalchemy.Integer, nullable=True)
         p_datetime = sqlalchemy.Column(sqlalchemy.Integer, nullable=True)
@@ -126,12 +126,12 @@ def table_factory_posts(board_name):# Posts table
         p_extra_files = sqlalchemy.Column(sqlalchemy.Integer, nullable=True)# TODO FIXME (File-to-post association)
         p_has_file = sqlalchemy.Column(sqlalchemy.Boolean, nullable=True)
         p_has_extra_files = sqlalchemy.Column(sqlalchemy.Boolean, nullable=True)
-        p_url = sqlalchemy.Column(sqlalchemy.String, nullable=True)
+        p_url = sqlalchemy.Column(sqlalchemy.Unicode, nullable=True)
         # 'Unused' attributes:
         p_poster_id = sqlalchemy.Column(sqlalchemy.Integer, nullable=True)
         p_file_deleted = sqlalchemy.Column(sqlalchemy.Boolean, nullable=True)
-        p_semantic_url = sqlalchemy.Column(sqlalchemy.String, nullable=True)
-        p_semantic_slug = sqlalchemy.Column(sqlalchemy.String, nullable=True)
+        p_semantic_url = sqlalchemy.Column(sqlalchemy.Unicode, nullable=True)
+        p_semantic_slug = sqlalchemy.Column(sqlalchemy.Unicode, nullable=True)
         # Misc recordkeeping (internal use and also for exporting dumps more easily)
         row_created = sqlalchemy.Column(sqlalchemy.DateTime, nullable=True, default=datetime.datetime.utcnow)
         row_updated = sqlalchemy.Column(sqlalchemy.DateTime, nullable=True, onupdate=datetime.datetime.utcnow)
@@ -145,32 +145,32 @@ def table_factory_files(board_name):# File table
     Make the 'x_files' table for an 8chan board.
     see https://stackoverflow.com/questions/19163911/dynamically-setting-tablename-for-sharding-in-sqlalchemy
     TODO: Sane database design"""
-    logging.debug('table_factory_files() args={0!r}'.format(locals()))# Record arguments.
-    assert(type(board_name) in [str, unicode])
-    table_name = '{0}_files'.format(board_name)
-    logging.debug('Naming the file table {0!r}'.format(table_name))
+    logging.debug(u'table_factory_files() args={0!r}'.format(locals()))# Record arguments.
+    assert(type(board_name) in [unicode])
+    table_name = u'{0}_files'.format(board_name)
+    logging.debug(u'Naming the file table {0!r}'.format(table_name))
     class File(Base):
         __tablename__ = table_name
         # https://github.com/bibanon/py8chan/blob/master/py8chan/file.py#L15
         # Use 'm_VarName' format to maybe avoid fuckery. (Name confusion, name collission, reserved keywords such as 'id', etc)
         m_post_id = sqlalchemy.Column(sqlalchemy.Integer, nullable=True)# TODO: Make this a foreign key linked to posts table
         # py8chan.File class attributes
-        m_file_md5 = sqlalchemy.Column(sqlalchemy.String, nullable=True)
-        m_file_md5_hex = sqlalchemy.Column(sqlalchemy.String, nullable=True)
-        m_filename_original = sqlalchemy.Column(sqlalchemy.String, nullable=True)
-        m_filename = sqlalchemy.Column(sqlalchemy.String, nullable=True)
-        m_file_url = sqlalchemy.Column(sqlalchemy.String, nullable=True)
-        m_file_extension = sqlalchemy.Column(sqlalchemy.String, nullable=True)
+        m_file_md5 = sqlalchemy.Column(sqlalchemy.Unicode, nullable=True)
+        m_file_md5_hex = sqlalchemy.Column(sqlalchemy.Unicode, nullable=True)
+        m_filename_original = sqlalchemy.Column(sqlalchemy.Unicode, nullable=True)
+        m_filename = sqlalchemy.Column(sqlalchemy.Unicode, nullable=True)
+        m_file_url = sqlalchemy.Column(sqlalchemy.Unicode, nullable=True)
+        m_file_extension = sqlalchemy.Column(sqlalchemy.Unicode, nullable=True)
         m_file_size = sqlalchemy.Column(sqlalchemy.Integer, nullable=True)
         m_file_width = sqlalchemy.Column(sqlalchemy.Integer, nullable=True)
         m_file_height = sqlalchemy.Column(sqlalchemy.Integer, nullable=True)
         m_thumbnail_width = sqlalchemy.Column(sqlalchemy.Integer, nullable=True)
         m_thumbnail_height = sqlalchemy.Column(sqlalchemy.Integer, nullable=True)
-        m_thumbnail_fname = sqlalchemy.Column(sqlalchemy.String, nullable=True)
-        m_thumbnail_url = sqlalchemy.Column(sqlalchemy.String, nullable=True)
+        m_thumbnail_fname = sqlalchemy.Column(sqlalchemy.Unicode, nullable=True)
+        m_thumbnail_url = sqlalchemy.Column(sqlalchemy.Unicode, nullable=True)
         # 'Unused' attributes:
         # archive-side values
-        archive_filename = sqlalchemy.Column(sqlalchemy.String, nullable=True)# What the file is called on the archive's disk
+        archive_filename = sqlalchemy.Column(sqlalchemy.Unicode, nullable=True)# What the file is called on the archive's disk
         file_saved = sqlalchemy.Column(sqlalchemy.Boolean, nullable=True)# Set to False if the file is lost from the server. Will be set to True when file is saved.
         thumbnail_saved = sqlalchemy.Column(sqlalchemy.Boolean, nullable=True)# Set to False if the thumbnail is lost from the server. Will be set to True when thumbnail is saved.
         forbidden = sqlalchemy.Column(sqlalchemy.Boolean, nullable=True)# If True any file matching this MD5 will not be downloaded.
@@ -198,18 +198,18 @@ def table_factory_files(board_name):# File table
 def convert_filepath_to_connect_string(filepath):
     """Convert a SQLite file filepath to a SQLAlchemy connection string"""
     # Convert windows-style backslashes to required forwardslashes
-    fp_fslash = re.sub(r'\\\\', '/', filepath)
-    connect_string = 'sqlite:///{0}'.format(fp_fslash)
+    fp_fslash = re.sub(ur'\\\\', '/', filepath)
+    connect_string = u'sqlite:///{0}'.format(fp_fslash)
     return connect_string
 
 
 def get_table_from_base(board_name, table_type):
     """Get the a reference to a table.
     Uses sqlalchemy Base."""
-    if table_type == 'boards':# Global tables
-        return Base.metadata.tables['{0}'.format(table_type)]
+    if table_type == u'boards':# Global tables
+        return Base.metadata.tables[u'{0}'.format(table_type)]
     else:# Board-specific tables
-        return Base.metadata.tables['{0}_{1}'.format(board_name, table_type)]
+        return Base.metadata.tables[u'{0}_{1}'.format(board_name, table_type)]
 
 
 def insert_thread(ses, board_name, board, thread_id, Boards, Threads, Posts, Files):
@@ -219,14 +219,14 @@ def insert_thread(ses, board_name, board, thread_id, Boards, Threads, Posts, Fil
     WARNING: May overwrite existing post/thread data in table!
     TODO: Look into resolutions for this potential issue.
     """
-    logging.debug('Fetching thread: {0}'.format(thread_id))
+    logging.debug(u'Fetching thread: {0!r}'.format(thread_id))
 ##    Boards = get_table_from_base(board_name=board_name, table_type='boards')
 ##    Threads = get_table_from_base(board_name=board_name, table_type='threads')
 ##    Posts = get_table_from_base(board_name=board_name, table_type='posts')
 ##    Files = get_table_from_base(board_name=board_name, table_type='files')
 
     # Poll DB for existing posts in this thread
-    logging.debug('Posts={0!r}'.format(Posts))
+    logging.debug(u'Posts={0!r}'.format(Posts))
     before_add_posts_q = ses.query(Posts)\
         .filter(Posts.p_thread_id == thread_id)
 
@@ -235,8 +235,8 @@ def insert_thread(ses, board_name, board, thread_id, Boards, Threads, Posts, Fil
 
     # Shove API data into the DB
     # Put thread-level data into DB
-    logging.info('Fake thread insert')
-    logging.info('thread={0}'.format(thread))
+    logging.info(u'Fake thread insert')
+    logging.info(u'thread={0!r}'.format(thread))
     # TODO: Insert thread-level data into DB
     new_thread = Threads(
         t_thread_id = thread.id,
@@ -250,25 +250,25 @@ def insert_thread(ses, board_name, board, thread_id, Boards, Threads, Posts, Fil
         t_url = thread.url,
     )
     ses.add(new_thread)
-    logging.debug('Staged thread entry')
+    logging.debug(u'Staged thread entry')
 
     for current_post in thread.all_posts:
         # Put post-level data into DB
-        logging.info('current_post={0}'.format(current_post))
+        logging.info(u'current_post={0!r}'.format(current_post))
         new_post = Posts(
             p_thread_id = thread_id,
         )
         current_post.post_id
         ses.add(new_post)
-        logging.debug('Staged post entry')
+        logging.debug(u'Staged post entry')
 
         # TODO: Insert post to DB
         if current_post.has_file:
-            logging.info('Post has file(s)')
+            logging.info(u'Post has file(s)')
             for current_file in current_post.all_files():
                 # Put file-level data into DB
-                logging.info('Fake file insert')
-                logging.info('current_file={0}'.format(current_file))
+                logging.info(u'Fake file insert')
+                logging.info(u'current_file={0!r}'.format(current_file))
 
                 # TODO Fetch media absent from DB
                 # Check if file has entry in DB (look for md5 and file_saved=True)
@@ -278,6 +278,9 @@ def insert_thread(ses, board_name, board, thread_id, Boards, Threads, Posts, Fil
                 # Check if file has entry in DB (look for md5 and forbidden=True)
                 # If any rows returned, skip download
 
+
+                logging.info(u'current_file.file_md5={0!r}'.format(current_file.file_md5))
+                logging.info(u'type(current_file.file_md5)={0!r}'.format(type(current_file.file_md5)))
 
                 file_check_q = ses.query(Files)\
                     .filter(Files.m_file_md5 == current_file.file_md5)
@@ -289,24 +292,24 @@ def insert_thread(ses, board_name, board, thread_id, Boards, Threads, Posts, Fil
                     # Already saved?
                     if ((file_saved == True) and (thumbnail_saved == True)):
                         # Do not save if file and thumbnail have been saved.
-                        logging.debug('File already saved: {0}'.format(current_file))
+                        logging.debug(u'File already saved: {0!r}'.format(current_file))
                         continue
                     # Forbidden?
                     elif (forbidden == True):
                         # If forbidden, do not permit saving file.
-                        logging.debug('File is forbidden: {0}, MD5={1}'.format(current_file, current_file.file_md5))
+                        logging.debug(u'File is forbidden: {0!r}, MD5={1!r}'.format(current_file, current_file.file_md5))
                         continue
                     else:
                         # If neither thumbnail or full file have been saved, and not forbidden, then save the file.
-                        logging.debug('Downloading file: {0}'.format(current_file))
+                        logging.debug(u'Downloading file: {0!r}'.format(current_file))
 
                         # Load remote file
                         # TODO
-                        logging.warning('Simulate requesting file')
+                        logging.warning(u'Simulate requesting file')
 
                         # Save file to disk
                         # TODO
-                        logging.warning('Simulate storing file')
+                        logging.warning(u'Simulate storing file')
 
                         # Insert file row
                         new_file = File(
@@ -330,20 +333,20 @@ def insert_thread(ses, board_name, board, thread_id, Boards, Threads, Posts, Fil
                             forbidden = True
                         )
                         ses.add(new_file)
-                        logging.debug('Staged file entry')
+                        logging.debug(u'Staged file entry')
                 continue
-            logging.debug('Finished this post\'s files')
+            logging.debug(u'Finished this post\'s files')
             continue
-        logging.debug('Finished this thread\'s posts')
+        logging.debug(u'Finished this thread\'s posts')
         continue
-    logging.info('Fetched thread')
+    logging.info(u'Fetched thread')
     return
 
 
 def dev():
-    logging.warning('running dev()')
-    board_name = 'pone'
-    db_filepath = os.path.join('temp', '{0}.sqlite'.format(board_name))
+    logging.warning(u'running dev()')
+    board_name = u'pone'
+    db_filepath = os.path.join(u'temp', u'{0}.sqlite'.format(board_name))
     connection_string = convert_filepath_to_connect_string(filepath=db_filepath)
     thread_id = 316521 # https://8ch.net/pone/res/316521.html
     # Prepare board DB classes/table mappers
@@ -359,7 +362,7 @@ def dev():
 ##    )
 
     # Setup/start/connect to DB
-    logging.debug('Connecting to DB')
+    logging.debug(u'Connecting to DB')
     db_dir, db_filename = os.path.split(db_filepath)
     if len(db_dir) != 0:# Ensure DB has a dir to be put in
         if not os.path.exists(db_dir):
@@ -396,11 +399,11 @@ def dev():
     # Persist data now that thread has been grabbed
     session.commit()
 
-    logging.info('Ending DB session')
+    logging.info(u'Ending DB session')
     session.close()# Release connection back to pool.
     engine.dispose()# Close all connections.
 
-    logging.warning('exiting dev()')
+    logging.warning(u'exiting dev()')
     return
 
 
@@ -416,6 +419,6 @@ if __name__ == '__main__':
         main()
     # Log exceptions
     except Exception, e:
-        logging.critical("Unhandled exception!")
+        logging.critical(u"Unhandled exception!")
         logging.exception(e)
-    logging.info("Program finished.")
+    logging.info(u"Program finished.")
