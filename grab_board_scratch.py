@@ -8,7 +8,21 @@
 # Copyright:   (c) User 2018
 # Licence:     <your licence>
 #-------------------------------------------------------------------------------
-
+# StdLib
+import time
+import os
+import random
+import logging
+import logging.handlers
+import datetime
+import json
+import cookielib
+import re
+# Remote libraries
+import requests
+import requests.exceptions
+# local
+import common
 
 
 
@@ -62,8 +76,27 @@ class thumbnail():
 
 
 
+def dev():
+    logging.warning('running dev()')
+
+
+
+    logging.warning('exiting dev()')
+    return
+
+
 def main():
-    pass
+    dev()
+    return
+
 
 if __name__ == '__main__':
-    main()
+    common.setup_logging(os.path.join("debug", "grab_board_py8ch.log.txt"))# Setup logging
+    try:
+        # Load configurations here to make them global
+        main()
+    # Log exceptions
+    except Exception, e:
+        logging.critical("Unhandled exception!")
+        logging.exception(e)
+    logging.info("Program finished.")
