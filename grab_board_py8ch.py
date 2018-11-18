@@ -29,17 +29,13 @@ from sqlalchemy.ext.declarative import declarative_base
 import common
 
 
-
+# Global stuff:
 Base = declarative_base()# Setup system to keep track of tables and classes
 
 
 
 
-# We need a DB
-
-# Allocate one table per board because fuck deduplication, that's hard and hard kills projects.
-
-def table_factory_board(board_name):
+def table_factory_board(board_name):# Boards table
     """ We're Java now!
     Make the 'x_board' table for an 8chan board.
     see https://stackoverflow.com/questions/19163911/dynamically-setting-tablename-for-sharding-in-sqlalchemy
@@ -49,7 +45,6 @@ def table_factory_board(board_name):
     assert(type(board_name) in [str, unicode])
     table_name = '{0}_board'.format(board_name)
     logging.debug('Naming the board table {0!r}'.format(table_name))
-
     class Board(Base):
         __tablename__ = table_name
         # From: https://github.com/bibanon/py8chan/blob/master/py8chan/board.py#L76
@@ -64,60 +59,19 @@ def table_factory_board(board_name):
         row_created = sqlalchemy.Column(sqlalchemy.DateTime, nullable=True, default=datetime.datetime.utcnow)
         row_updated = sqlalchemy.Column(sqlalchemy.DateTime, nullable=True, onupdate=datetime.datetime.utcnow)
         primary_key = sqlalchemy.Column(sqlalchemy.Integer, primary_key=True)
-
     return Board
-##Board = table_factory_board(board_name='pone')
 
 
-### Disregard this
-##def get_dynamic_table_obj_ff(table_name):
-##    """Generate a table with a custom name"""
-##    # https://stackoverflow.com/questions/19163911/dynamically-setting-tablename-for-sharding-in-sqlalchemy
-##    logging.debug('import_from_ff_db() args={0!r}'.format(locals()))# Record arguments. WARNING: It is dangerous to record connection string!
-##    assert(type(table_name) in [str, unicode])
-##    metadata = sqlalchemy.MetaData()
-##    table_object = sqlalchemy.Table(table_name, metadata,
-####        Column('Column1', DATE, nullable=False),
-##        # Foolfuuka media.img_<BOARDNAME> values
-##        sqlalchemy.Column('media_id', sqlalchemy.Integer, nullable=True),
-##        sqlalchemy.Column('media_hash', sqlalchemy.String(32), nullable=True),
-##        sqlalchemy.Column('media', sqlalchemy.String, nullable=True),
-##        sqlalchemy.Column('preview_op', sqlalchemy.String, nullable=True),
-##        sqlalchemy.Column('preview_reply', sqlalchemy.String, nullable=True),
-##        sqlalchemy.Column('total', sqlalchemy.Integer, nullable=True),
-##        sqlalchemy.Column('banned', sqlalchemy.Integer, nullable=True),
-##        # Recordkeeping about export progress
-##        sqlalchemy.Column('media_exported', sqlalchemy.Boolean, nullable=False),
-##        sqlalchemy.Column('media_exported_date', sqlalchemy.DateTime, nullable=True),
-##        sqlalchemy.Column('op_exported', sqlalchemy.Boolean, nullable=False),
-##        sqlalchemy.Column('op_exported_date', sqlalchemy.DateTime, nullable=True),
-##        sqlalchemy.Column('reply_exported', sqlalchemy.Boolean, nullable=False),
-##        sqlalchemy.Column('reply_exported_date', sqlalchemy.DateTime, nullable=True),
-##        # Misc recordkeeping
-##        sqlalchemy.Column('row_created', sqlalchemy.DateTime, nullable=True, default=datetime.datetime.utcnow),
-##        sqlalchemy.Column('row_updated', sqlalchemy.DateTime, nullable=True, onupdate=datetime.datetime.utcnow),
-##        sqlalchemy.Column('primary_key', sqlalchemy.Integer, primary_key=True)
-##
-##    )
-####    sqlalchemy.clear_mappers()
-##    sqlalchemy.mapper(ActualTableObject, table_object)
-##    return table_object
-##f_table = get_dynamic_table_obj_ff(table_name='ftg_testtable')
-### /Disregard this
 
-
-# Threads table
-def table_factory_threads(board_name):
-    """ We're Java now!
+def table_factory_threads(board_name):# Threads table
+    """We're Java now!
     Make the 'x_threads' table for an 8chan board.
     see https://stackoverflow.com/questions/19163911/dynamically-setting-tablename-for-sharding-in-sqlalchemy
-    TODO: Sane database design
-    """
+    TODO: Sane database design"""
     logging.debug('table_factory_threads() args={0!r}'.format(locals()))# Record arguments.
     assert(type(board_name) in [str, unicode])
     table_name = '{0}_threads'.format(board_name)
     logging.debug('Naming the thread table {0!r}'.format(table_name))
-
     class Threads(Base):
         __tablename__ = table_name
         # From: https://github.com/bibanon/py8chan/blob/master/py8chan/thread.py#L10
@@ -138,22 +92,19 @@ def table_factory_threads(board_name):
         row_updated = sqlalchemy.Column(sqlalchemy.DateTime, nullable=True, onupdate=datetime.datetime.utcnow)
         primary_key = sqlalchemy.Column(sqlalchemy.Integer, primary_key=True)
     return Threads
-##Threads = table_factory_threads(board_name='pone')
 
 
 
-# Posts table
-def table_factory_posts(board_name):
-    """ We're Java now!
+
+def table_factory_posts(board_name):# Posts table
+    """We're Java now!
     Make the 'x_posts' table for an 8chan board.
     see https://stackoverflow.com/questions/19163911/dynamically-setting-tablename-for-sharding-in-sqlalchemy
-    TODO: Sane database design
-    """
+    TODO: Sane database design"""
     logging.debug('table_factory_posts() args={0!r}'.format(locals()))# Record arguments.
     assert(type(board_name) in [str, unicode])
     table_name = '{0}_posts'.format(board_name)
     logging.debug('Naming the posts table {0!r}'.format(table_name))
-
     class Posts(Base):
         __tablename__ = table_name
         # From: https://github.com/bibanon/py8chan/blob/master/py8chan/post.py#L13
@@ -187,22 +138,18 @@ def table_factory_posts(board_name):
         row_updated = sqlalchemy.Column(sqlalchemy.DateTime, nullable=True, onupdate=datetime.datetime.utcnow)
         primary_key = sqlalchemy.Column(sqlalchemy.Integer, primary_key=True)
     return Posts
-##Posts = table_factory_posts(board_name='pone')
 
 
 
-# File table
-def table_factory_files(board_name):
-    """ We're Java now!
+def table_factory_files(board_name):# File table
+    """We're Java now!
     Make the 'x_files' table for an 8chan board.
     see https://stackoverflow.com/questions/19163911/dynamically-setting-tablename-for-sharding-in-sqlalchemy
-    TODO: Sane database design
-    """
+    TODO: Sane database design"""
     logging.debug('table_factory_files() args={0!r}'.format(locals()))# Record arguments.
     assert(type(board_name) in [str, unicode])
     table_name = '{0}_files'.format(board_name)
     logging.debug('Naming the file table {0!r}'.format(table_name))
-
     class File(Base):
         __tablename__ = table_name
         # https://github.com/bibanon/py8chan/blob/master/py8chan/file.py#L15
@@ -227,7 +174,7 @@ def table_factory_files(board_name):
         row_updated = sqlalchemy.Column(sqlalchemy.DateTime, nullable=True, onupdate=datetime.datetime.utcnow)
         primary_key = sqlalchemy.Column(sqlalchemy.Integer, primary_key=True)
     return File
-##File = table_factory_files(board_name='pone')
+
 
 
 def convert_filepath_to_connect_string(filepath):
@@ -237,6 +184,33 @@ def convert_filepath_to_connect_string(filepath):
     connect_string = 'sqlite:///{0}'.format(fp_fslash)
     return connect_string
 
+
+
+def insert_thread(ses, board, thread_id):
+    """Fetch and insert one thread.
+    ses: Sqlalchemy DB session
+    board: py8chan Board instance
+    """
+    thread = board.get_thread(thread_id)
+
+    # Shove API data into the DB
+    # Put thread-level data into DB
+    logging.info('Fake thread insert')
+    logging.info('thread={0}'.format(thread))
+    # TODO: Insert thread-level data into DB
+    for current_post in thread.all_posts:
+        # Put post-level data into DB
+        post = Post()
+        logging.info('current_post={0}'.format(current_post))
+        # TODO: Insert post to DB
+        if current_post.has_file:
+            logging.info('Post has file(s)')
+            for current_file in current_post.all_files():
+                # Put file-level data into DB
+                logging.info('Fake file insert')
+                logging.info('current_file={0}'.format(current_file))
+                # TODO Fetch media absent from DB
+    return
 
 
 def dev():
@@ -271,28 +245,30 @@ def dev():
     # Fetch from the API
     pone = py8chan.Board(board_name)
 
-    # TODO: Whole board grabbing
-    thread = pone.get_thread(thread_id)
-##    print(thread)
-##    logging.info('thread={0}'.format(thread))
-##    logging.info('thread={0!r}'.format(thread))
+##    # TODO: Whole board grabbing
+##    thread = pone.get_thread(thread_id)
 
     # Shove API data into the DB
-    # Put thread-level data into DB
-    logging.info('Fake thread insert')
-    logging.info('thread={0}'.format(thread))
-    for current_post in thread.all_posts:
-        # Put post-level data into DB
-        logging.info('Fake post insert')
-        logging.info('current_post={0}'.format(thread_post))
-        if current_post.has_file:
-            logging.info('Post has file(s)')
-            for current_file in current_post.all_files():
-                # Put file-level data into DB
-                logging.info('Fake file insert')
-                logging.info('current_file={0}'.format(post_file))
+    insert_thread(
+        ses=session,
+        board=pone,
+        thread_id=thread_id
+    )
 
 
+##    # Put thread-level data into DB
+##    logging.info('Fake thread insert')
+##    logging.info('thread={0}'.format(thread))
+##    for current_post in thread.all_posts:
+##        # Put post-level data into DB
+##        logging.info('Fake post insert')
+##        logging.info('current_post={0}'.format(current_post))
+##        if current_post.has_file:
+##            logging.info('Post has file(s)')
+##            for current_file in current_post.all_files():
+##                # Put file-level data into DB
+##                logging.info('Fake file insert')
+##                logging.info('current_file={0}'.format(current_file))
     logging.warning('exiting dev()')
     return
 
