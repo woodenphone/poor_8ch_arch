@@ -153,6 +153,7 @@ def table_factory_files(board_name):# File table
         __tablename__ = table_name
         # https://github.com/bibanon/py8chan/blob/master/py8chan/file.py#L15
         # Use 'm_VarName' format to maybe avoid fuckery. (Name confusion, name collission, reserved keywords such as 'id', etc)
+        m_post_id = sqlalchemy.Column(sqlalchemy.Integer, nullable=True)# TODO: Make this a foreign key linked to posts table
         # py8chan.File class attributes
         m_file_md5 = sqlalchemy.Column(sqlalchemy.String, nullable=True)
         m_file_md5_hex = sqlalchemy.Column(sqlalchemy.String, nullable=True)
@@ -171,6 +172,7 @@ def table_factory_files(board_name):# File table
         # archive-side values
         archive_filename = sqlalchemy.Column(sqlalchemy.String, nullable=True)# What the file is called on the archive's disk
         file_saved = sqlalchemy.Column(sqlalchemy.Boolean, nullable=True)# Set to False if the file is lost from the server. Will be set to True when file is saved.
+        thumbnail_saved = sqlalchemy.Column(sqlalchemy.Boolean, nullable=True)# Set to False if the thumbnail is lost from the server. Will be set to True when thumbnail is saved.
         forbidden = sqlalchemy.Column(sqlalchemy.Boolean, nullable=True)# If True any file matching this MD5 will not be downloaded.
         # Misc recordkeeping: (internal use and also for exporting dumps more easily)
         row_created = sqlalchemy.Column(sqlalchemy.DateTime, nullable=True, default=datetime.datetime.utcnow)
@@ -277,23 +279,30 @@ def insert_thread(ses, board_name, board, thread_id):
                     .filter(m_file_md5=current_file.file_md5)
                 img_check_result = img_check_q.first()
                 if img_check_result:
+                    file_saved = img_check_result.file_saved
+                    thumbnail_saved = img_check_result.thumbnail_saved
+                    forbidden = img_check_result.forbidden
                     # Already saved?
-                    if (img_check_result.file_saved == True):# TODO
+                    if ((file_saved == True) and (thumbnail_saved == True)):
+                        # Do not save if file and thumbnail have been saved.
                         logging.debug('File already saved: {0}'.format(current_file))
                         continue
                     # Forbidden?
-                    elif (img_check_result.forbidden == True):# TODO
-                        logging.debug('File is forbidden: {0}'.format(current_file))
-                        logging.debug('File is forbidden: {0}'.format(current_file))
+                    elif (forbidden == True):
+                        # If forbidden, do not permit saving file.
+                        logging.debug('File is forbidden: {0}, MD5={1}'.format(current_file, current_file.file_md5))
                         continue
                     else:
+                        # If neither thumbnail or full file have been saved, and not forbidden, then save the file.
                         logging.debug('Downloading file: {0}'.format(current_file))
 
                         # Load remote file
                         # TODO
+                        logging.warning('Simulate requesting file')
 
                         # Save file to disk
                         # TODO
+                        logging.warning('Simulate storing file')
 
                         # Insert file row
                         new_file = File(
