@@ -273,19 +273,24 @@ def dev():
 
     # TODO: Whole board grabbing
     thread = pone.get_thread(thread_id)
-    print(thread)
-    logging.info('thread={0}'.format(thread))
-    logging.info('thread={0!r}'.format(thread))
+##    print(thread)
+##    logging.info('thread={0}'.format(thread))
+##    logging.info('thread={0!r}'.format(thread))
 
     # Shove API data into the DB
-    logging.info('Fake thread insert')
     # Put thread-level data into DB
-    for post in thread:
+    logging.info('Fake thread insert')
+    logging.info('thread={0}'.format(thread))
+    for current_post in thread.all_posts:
         # Put post-level data into DB
         logging.info('Fake post insert')
-        for file in post:
-            # Put file-level data into DB
-            logging.info('Fake file insert')
+        logging.info('current_post={0}'.format(thread_post))
+        if current_post.has_file:
+            logging.info('Post has file(s)')
+            for current_file in current_post.all_files():
+                # Put file-level data into DB
+                logging.info('Fake file insert')
+                logging.info('current_file={0}'.format(post_file))
 
 
     logging.warning('exiting dev()')
