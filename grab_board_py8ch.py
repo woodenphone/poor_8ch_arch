@@ -43,7 +43,7 @@ def table_factory_boards():# Boards table
     """
     table_name = 'boards'
     logging.debug('Naming the board table {0!r}'.format(table_name))
-    class Board(Base):
+    class Boards(Base):
         __tablename__ = table_name
         # From: https://github.com/bibanon/py8chan/blob/master/py8chan/board.py#L76
         # Use 'b_VarName' format to maybe avoid fuckery. (Name confusion, name collission, reserved keywords such as 'id', etc)
@@ -57,7 +57,7 @@ def table_factory_boards():# Boards table
         row_created = sqlalchemy.Column(sqlalchemy.DateTime, nullable=True, default=datetime.datetime.utcnow)
         row_updated = sqlalchemy.Column(sqlalchemy.DateTime, nullable=True, onupdate=datetime.datetime.utcnow)
         primary_key = sqlalchemy.Column(sqlalchemy.Integer, primary_key=True)
-    return Board
+    return Boards
 
 
 
@@ -206,10 +206,13 @@ def convert_filepath_to_connect_string(filepath):
 def get_table_from_base(board_name, table_type):
     """Get the a reference to a table.
     Uses sqlalchemy Base."""
-    return Base.metadata.tables['{0}_{1}'.format(board_name, table_type)]
+    if table_type == 'boards':# Global tables
+        return Base.metadata.tables['{0}'.format(table_type)]
+    else:# Board-specific tables
+        return Base.metadata.tables['{0}_{1}'.format(board_name, table_type)]
 
 
-def insert_thread(ses, board_name, board, thread_id):
+def insert_thread(ses, board_name, board, thread_id, Boards, Threads, Posts, Files):
     """Fetch and insert one thread.
     ses: Sqlalchemy DB session
     board: py8chan Board instance
@@ -217,14 +220,15 @@ def insert_thread(ses, board_name, board, thread_id):
     TODO: Look into resolutions for this potential issue.
     """
     logging.debug('Fetching thread: {0}'.format(thread_id))
-    Boards = get_table_from_base(board_name=board_name, table_type='boards')
-    Threads = get_table_from_base(board_name=board_name, table_type='threads')
-    Posts = get_table_from_base(board_name=board_name, table_type='posts')
-    Files = get_table_from_base(board_name=board_name, table_type='files')
+##    Boards = get_table_from_base(board_name=board_name, table_type='boards')
+##    Threads = get_table_from_base(board_name=board_name, table_type='threads')
+##    Posts = get_table_from_base(board_name=board_name, table_type='posts')
+##    Files = get_table_from_base(board_name=board_name, table_type='files')
 
     # Poll DB for existing posts in this thread
+    logging.debug('Posts={0!r}'.format(Posts))
     before_add_posts_q = ses.query(Posts)\
-        .filter(p_thread_id=thread_id)
+        .filter(Posts.p_thread_id == thread_id)
 
     # Load thread from site
     thread = board.get_thread(thread_id)
@@ -240,7 +244,7 @@ def insert_thread(ses, board_name, board, thread_id):
         t_last_reply_id = thread.last_reply_id,
         t_closed = thread.closed,
         t_sticky = thread.sticky,
-        t_topic = thread.topic,
+        t_topic = thread.topic.post_id,# TODO Figure out what we want to do here. (Should we even put a topic entry in here? (If so, make foreign key?))
         t_posts = None,# TODO FIXME (post-to-thread association)
         t_all_posts = None,# TODO FIXME (post-to-thread association)
         t_url = thread.url,
@@ -275,13 +279,13 @@ def insert_thread(ses, board_name, board, thread_id):
                 # If any rows returned, skip download
 
 
-                img_check_q = ses.query(Images)\
-                    .filter(m_file_md5=current_file.file_md5)
-                img_check_result = img_check_q.first()
-                if img_check_result:
-                    file_saved = img_check_result.file_saved
-                    thumbnail_saved = img_check_result.thumbnail_saved
-                    forbidden = img_check_result.forbidden
+                file_check_q = ses.query(Files)\
+                    .filter(Files.m_file_md5 == current_file.file_md5)
+                file_check_result = file_check_q.first()
+                if file_check_result:
+                    file_saved = file_check_result.file_saved# Does archive have file?
+                    thumbnail_saved = file_check_result.thumbnail_saved# Does archive have thumbnail?
+                    forbidden = file_check_result.forbidden# Has archive forbidden file hash?
                     # Already saved?
                     if ((file_saved == True) and (thumbnail_saved == True)):
                         # Do not save if file and thumbnail have been saved.
@@ -322,6 +326,7 @@ def insert_thread(ses, board_name, board, thread_id):
                             m_thumbnail_url = current_file.thumbnail_url,
                             # archive-side data (File present on disk? File forbidden?)
                             file_saved = True,
+                            thumbnail_saved=True,
                             forbidden = True
                         )
                         ses.add(new_file)
@@ -381,7 +386,11 @@ def dev():
         ses=session,
         board_name=board_name,
         board=pone,
-        thread_id=thread_id
+        thread_id=thread_id,
+        Boards=Boards,
+        Threads=Threads,
+        Posts=Posts,
+        Files=Files,
     )
 
     # Persist data now that thread has been grabbed
