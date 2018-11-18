@@ -44,62 +44,79 @@ def threads_table_factory(board_name):
     logging.debug('threads_table_factory() args={0!r}'.format(locals()))# Record arguments.
     assert(type(board_name) in [str, unicode])
     table_name = '{0}_threads'.format(board_name)
-    metadata = sqlalchemy.MetaData()
-    Threads = sqlalchemy.Table(table_name, metadata,
-        # From: https://github.com/bibanon/py8chan/blob/master/py8chan/board.py#L76
-        # Use 'board_VarName' format to maybe avoid fuckery.
-        sqlalchemy.Column('board_name', sqlalchemy.Integer, nullable=True),
-        sqlalchemy.Column('board_title', sqlalchemy.Integer, nullable=True),
-        sqlalchemy.Column('board_is_worksafe', sqlalchemy.Boolean, nullable=True),
-        sqlalchemy.Column('board_page_count', sqlalchemy.Integer, nullable=True),
-        sqlalchemy.Column('board_title', sqlalchemy.Integer, nullable=True),
-        sqlalchemy.Column('board_threads_per_page', sqlalchemy.Integer, nullable=True),
-        # Misc recordkeeping (internal use and also for exporting dumps more easily)
-        sqlalchemy.Column('row_created', sqlalchemy.DateTime, nullable=True, default=datetime.datetime.utcnow),
-        sqlalchemy.Column('row_updated', sqlalchemy.DateTime, nullable=True, onupdate=datetime.datetime.utcnow),
-        sqlalchemy.Column('primary_key', sqlalchemy.Integer, primary_key=True)
-    )
-##    sqlalchemy.clear_mappers()
-    sqlalchemy.mapper(ActualTableObject, Threads)
-    return Threads
-
-
-
-# Disregard this
-def get_dynamic_table_obj_ff(table_name):
-    """Generate a table with a custom name"""
     # https://stackoverflow.com/questions/19163911/dynamically-setting-tablename-for-sharding-in-sqlalchemy
-    logging.debug('import_from_ff_db() args={0!r}'.format(locals()))# Record arguments. WARNING: It is dangerous to record connection string!
-    assert(type(table_name) in [str, unicode])
-    metadata = sqlalchemy.MetaData()
-    table_object = sqlalchemy.Table(table_name, metadata,
-##        Column('Column1', DATE, nullable=False),
-        # Foolfuuka media.img_<BOARDNAME> values
-        sqlalchemy.Column('media_id', sqlalchemy.Integer, nullable=True),
-        sqlalchemy.Column('media_hash', sqlalchemy.String(32), nullable=True),
-        sqlalchemy.Column('media', sqlalchemy.String, nullable=True),
-        sqlalchemy.Column('preview_op', sqlalchemy.String, nullable=True),
-        sqlalchemy.Column('preview_reply', sqlalchemy.String, nullable=True),
-        sqlalchemy.Column('total', sqlalchemy.Integer, nullable=True),
-        sqlalchemy.Column('banned', sqlalchemy.Integer, nullable=True),
-        # Recordkeeping about export progress
-        sqlalchemy.Column('media_exported', sqlalchemy.Boolean, nullable=False),
-        sqlalchemy.Column('media_exported_date', sqlalchemy.DateTime, nullable=True),
-        sqlalchemy.Column('op_exported', sqlalchemy.Boolean, nullable=False),
-        sqlalchemy.Column('op_exported_date', sqlalchemy.DateTime, nullable=True),
-        sqlalchemy.Column('reply_exported', sqlalchemy.Boolean, nullable=False),
-        sqlalchemy.Column('reply_exported_date', sqlalchemy.DateTime, nullable=True),
-        # Misc recordkeeping
-        sqlalchemy.Column('row_created', sqlalchemy.DateTime, nullable=True, default=datetime.datetime.utcnow),
-        sqlalchemy.Column('row_updated', sqlalchemy.DateTime, nullable=True, onupdate=datetime.datetime.utcnow),
-        sqlalchemy.Column('primary_key', sqlalchemy.Integer, primary_key=True)
+    class BoardThreads(Base):
+        __tablename__ = table_name
+        # From: https://github.com/bibanon/py8chan/blob/master/py8chan/board.py#L76
+        # Use 'board_VarName' format to maybe avoid fuckery. (Name confusion, name collission, etc)
+        board_name = sqlalchemy.Column('board_name', sqlalchemy.Integer, nullable=True)
+        board_title = sqlalchemy.Column('board_title', sqlalchemy.Integer, nullable=True)
+        board_is_worksafe = sqlalchemy.Column('board_is_worksafe', sqlalchemy.Boolean, nullable=True)
+        board_page_count= sqlalchemy.Column('board_page_count', sqlalchemy.Integer, nullable=True)
+        board_title = sqlalchemy.Column('board_title', sqlalchemy.Integer, nullable=True)
+        board_threads_per_page = sqlalchemy.Column('board_threads_per_page', sqlalchemy.Integer, nullable=True)
+        # Misc recordkeeping (internal use and also for exporting dumps more easily)
+        row_created = sqlalchemy.Column('row_created', sqlalchemy.DateTime, nullable=True, default=datetime.datetime.utcnow)
+        row_updated = sqlalchemy.Column('row_updated', sqlalchemy.DateTime, nullable=True, onupdate=datetime.datetime.utcnow)
+        primary_key = sqlalchemy.Column('primary_key', sqlalchemy.Integer, primary_key=True)
 
-    )
-##    sqlalchemy.clear_mappers()
-    sqlalchemy.mapper(ActualTableObject, table_object)
-    return table_object
-f_table = get_dynamic_table_ff(table_name='ftg_testtable')
-# /Disregard this
+
+##    metadata = sqlalchemy.MetaData()
+##    Threads = sqlalchemy.Table(table_name, metadata,
+##        # From: https://github.com/bibanon/py8chan/blob/master/py8chan/board.py#L76
+##        # Use 'board_VarName' format to maybe avoid fuckery.
+##        sqlalchemy.Column('board_name', sqlalchemy.Integer, nullable=True),
+##        sqlalchemy.Column('board_title', sqlalchemy.Integer, nullable=True),
+##        sqlalchemy.Column('board_is_worksafe', sqlalchemy.Boolean, nullable=True),
+##        sqlalchemy.Column('board_page_count', sqlalchemy.Integer, nullable=True),
+##        sqlalchemy.Column('board_title', sqlalchemy.Integer, nullable=True),
+##        sqlalchemy.Column('board_threads_per_page', sqlalchemy.Integer, nullable=True),
+##        # Misc recordkeeping (internal use and also for exporting dumps more easily)
+##        sqlalchemy.Column('row_created', sqlalchemy.DateTime, nullable=True, default=datetime.datetime.utcnow),
+##        sqlalchemy.Column('row_updated', sqlalchemy.DateTime, nullable=True, onupdate=datetime.datetime.utcnow),
+##        sqlalchemy.Column('primary_key', sqlalchemy.Integer, primary_key=True)
+##    )
+####    sqlalchemy.clear_mappers()
+##    sqlalchemy.mapper(ActualTableObject, Threads)
+    return BoardThreads
+Threads = threads_table_factory(board_name='pone')
+
+
+### Disregard this
+##def get_dynamic_table_obj_ff(table_name):
+##    """Generate a table with a custom name"""
+##    # https://stackoverflow.com/questions/19163911/dynamically-setting-tablename-for-sharding-in-sqlalchemy
+##    logging.debug('import_from_ff_db() args={0!r}'.format(locals()))# Record arguments. WARNING: It is dangerous to record connection string!
+##    assert(type(table_name) in [str, unicode])
+##    metadata = sqlalchemy.MetaData()
+##    table_object = sqlalchemy.Table(table_name, metadata,
+####        Column('Column1', DATE, nullable=False),
+##        # Foolfuuka media.img_<BOARDNAME> values
+##        sqlalchemy.Column('media_id', sqlalchemy.Integer, nullable=True),
+##        sqlalchemy.Column('media_hash', sqlalchemy.String(32), nullable=True),
+##        sqlalchemy.Column('media', sqlalchemy.String, nullable=True),
+##        sqlalchemy.Column('preview_op', sqlalchemy.String, nullable=True),
+##        sqlalchemy.Column('preview_reply', sqlalchemy.String, nullable=True),
+##        sqlalchemy.Column('total', sqlalchemy.Integer, nullable=True),
+##        sqlalchemy.Column('banned', sqlalchemy.Integer, nullable=True),
+##        # Recordkeeping about export progress
+##        sqlalchemy.Column('media_exported', sqlalchemy.Boolean, nullable=False),
+##        sqlalchemy.Column('media_exported_date', sqlalchemy.DateTime, nullable=True),
+##        sqlalchemy.Column('op_exported', sqlalchemy.Boolean, nullable=False),
+##        sqlalchemy.Column('op_exported_date', sqlalchemy.DateTime, nullable=True),
+##        sqlalchemy.Column('reply_exported', sqlalchemy.Boolean, nullable=False),
+##        sqlalchemy.Column('reply_exported_date', sqlalchemy.DateTime, nullable=True),
+##        # Misc recordkeeping
+##        sqlalchemy.Column('row_created', sqlalchemy.DateTime, nullable=True, default=datetime.datetime.utcnow),
+##        sqlalchemy.Column('row_updated', sqlalchemy.DateTime, nullable=True, onupdate=datetime.datetime.utcnow),
+##        sqlalchemy.Column('primary_key', sqlalchemy.Integer, primary_key=True)
+##
+##    )
+####    sqlalchemy.clear_mappers()
+##    sqlalchemy.mapper(ActualTableObject, table_object)
+##    return table_object
+##f_table = get_dynamic_table_obj_ff(table_name='ftg_testtable')
+### /Disregard this
 
 
 
