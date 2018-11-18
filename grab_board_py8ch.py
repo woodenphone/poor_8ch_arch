@@ -39,47 +39,34 @@ Base = declarative_base()# Setup system to keep track of tables and classes
 
 # Allocate one table per board because fuck deduplication, that's hard and hard kills projects.
 
-def threads_table_factory(board_name):
-    """ We're Java now!"""
-    logging.debug('threads_table_factory() args={0!r}'.format(locals()))# Record arguments.
+def table_factory_board(board_name):
+    """ We're Java now!
+    Make the 'x_board' table for an 8chan board.
+    see https://stackoverflow.com/questions/19163911/dynamically-setting-tablename-for-sharding-in-sqlalchemy
+    TODO: Sane database design
+    """
+    logging.debug('table_factory_board() args={0!r}'.format(locals()))# Record arguments.
     assert(type(board_name) in [str, unicode])
-    table_name = '{0}_threads'.format(board_name)
-    # https://stackoverflow.com/questions/19163911/dynamically-setting-tablename-for-sharding-in-sqlalchemy
-    class BoardThreads(Base):
+    table_name = '{0}_board'.format(board_name)
+    logging.debug('Naming the board table {0!r}'.format(table_name))
+
+    class Board(Base):
         __tablename__ = table_name
         # From: https://github.com/bibanon/py8chan/blob/master/py8chan/board.py#L76
-        # Use 'board_VarName' format to maybe avoid fuckery. (Name confusion, name collission, etc)
-        board_name = sqlalchemy.Column('board_name', sqlalchemy.Integer, nullable=True)
-        board_title = sqlalchemy.Column('board_title', sqlalchemy.Integer, nullable=True)
-        board_is_worksafe = sqlalchemy.Column('board_is_worksafe', sqlalchemy.Boolean, nullable=True)
-        board_page_count= sqlalchemy.Column('board_page_count', sqlalchemy.Integer, nullable=True)
-        board_title = sqlalchemy.Column('board_title', sqlalchemy.Integer, nullable=True)
-        board_threads_per_page = sqlalchemy.Column('board_threads_per_page', sqlalchemy.Integer, nullable=True)
+        # Use 'b_VarName' format to maybe avoid fuckery. (Name confusion, name collission, reserved keywords such as 'id', etc)
+        b_name = sqlalchemy.Column(sqlalchemy.Integer, nullable=True)
+        b_title = sqlalchemy.Column(sqlalchemy.Integer, nullable=True)
+        b_is_worksafe = sqlalchemy.Column(sqlalchemy.Boolean, nullable=True)
+        b_page_count= sqlalchemy.Column(sqlalchemy.Integer, nullable=True)
+        b_title = sqlalchemy.Column(sqlalchemy.Integer, nullable=True)
+        b_threads_per_page = sqlalchemy.Column(sqlalchemy.Integer, nullable=True)
         # Misc recordkeeping (internal use and also for exporting dumps more easily)
-        row_created = sqlalchemy.Column('row_created', sqlalchemy.DateTime, nullable=True, default=datetime.datetime.utcnow)
-        row_updated = sqlalchemy.Column('row_updated', sqlalchemy.DateTime, nullable=True, onupdate=datetime.datetime.utcnow)
-        primary_key = sqlalchemy.Column('primary_key', sqlalchemy.Integer, primary_key=True)
+        row_created = sqlalchemy.Column(sqlalchemy.DateTime, nullable=True, default=datetime.datetime.utcnow)
+        row_updated = sqlalchemy.Column(sqlalchemy.DateTime, nullable=True, onupdate=datetime.datetime.utcnow)
+        primary_key = sqlalchemy.Column(sqlalchemy.Integer, primary_key=True)
 
-
-##    metadata = sqlalchemy.MetaData()
-##    Threads = sqlalchemy.Table(table_name, metadata,
-##        # From: https://github.com/bibanon/py8chan/blob/master/py8chan/board.py#L76
-##        # Use 'board_VarName' format to maybe avoid fuckery.
-##        sqlalchemy.Column('board_name', sqlalchemy.Integer, nullable=True),
-##        sqlalchemy.Column('board_title', sqlalchemy.Integer, nullable=True),
-##        sqlalchemy.Column('board_is_worksafe', sqlalchemy.Boolean, nullable=True),
-##        sqlalchemy.Column('board_page_count', sqlalchemy.Integer, nullable=True),
-##        sqlalchemy.Column('board_title', sqlalchemy.Integer, nullable=True),
-##        sqlalchemy.Column('board_threads_per_page', sqlalchemy.Integer, nullable=True),
-##        # Misc recordkeeping (internal use and also for exporting dumps more easily)
-##        sqlalchemy.Column('row_created', sqlalchemy.DateTime, nullable=True, default=datetime.datetime.utcnow),
-##        sqlalchemy.Column('row_updated', sqlalchemy.DateTime, nullable=True, onupdate=datetime.datetime.utcnow),
-##        sqlalchemy.Column('primary_key', sqlalchemy.Integer, primary_key=True)
-##    )
-####    sqlalchemy.clear_mappers()
-##    sqlalchemy.mapper(ActualTableObject, Threads)
-    return BoardThreads
-Threads = threads_table_factory(board_name='pone')
+    return Board
+##Board = table_factory_board(board_name='pone')
 
 
 ### Disregard this
@@ -119,43 +106,186 @@ Threads = threads_table_factory(board_name='pone')
 ### /Disregard this
 
 
-
-
-
-
-
-
-
-
-
-
 # Threads table
+def table_factory_threads(board_name):
+    """ We're Java now!
+    Make the 'x_threads' table for an 8chan board.
+    see https://stackoverflow.com/questions/19163911/dynamically-setting-tablename-for-sharding-in-sqlalchemy
+    TODO: Sane database design
+    """
+    logging.debug('table_factory_threads() args={0!r}'.format(locals()))# Record arguments.
+    assert(type(board_name) in [str, unicode])
+    table_name = '{0}_threads'.format(board_name)
+    logging.debug('Naming the thread table {0!r}'.format(table_name))
+
+    class Threads(Base):
+        __tablename__ = table_name
+        # From: https://github.com/bibanon/py8chan/blob/master/py8chan/thread.py#L10
+        # Use 't_VarName' format to maybe avoid fuckery. (Name confusion, name collission, reserved keywords such as 'id', etc)
+        t_thread_id = sqlalchemy.Column(sqlalchemy.Integer, nullable=True)
+        t_board = sqlalchemy.Column(sqlalchemy.Integer, nullable=True)
+        t_last_reply_id = sqlalchemy.Column(sqlalchemy.Integer, nullable=True)
+        # py8chan.Thread class attributes
+        t_closed = sqlalchemy.Column(sqlalchemy.Boolean, nullable=True)
+        t_sticky = sqlalchemy.Column(sqlalchemy.String, nullable=True)
+        t_topic = sqlalchemy.Column(sqlalchemy.String, nullable=True)
+        t_posts = sqlalchemy.Column(sqlalchemy.String, nullable=True)# TODO FIXME (post-to-thread association)
+        t_all_posts = sqlalchemy.Column(sqlalchemy.String, nullable=True)# TODO FIXME (post-to-thread association)
+        t_url = sqlalchemy.Column(sqlalchemy.String, nullable=True)
+        # 'Unused' attributes:
+        # Misc recordkeeping: (internal use and also for exporting dumps more easily)
+        row_created = sqlalchemy.Column(sqlalchemy.DateTime, nullable=True, default=datetime.datetime.utcnow)
+        row_updated = sqlalchemy.Column(sqlalchemy.DateTime, nullable=True, onupdate=datetime.datetime.utcnow)
+        primary_key = sqlalchemy.Column(sqlalchemy.Integer, primary_key=True)
+    return Threads
+##Threads = table_factory_threads(board_name='pone')
+
 
 
 # Posts table
+def table_factory_posts(board_name):
+    """ We're Java now!
+    Make the 'x_posts' table for an 8chan board.
+    see https://stackoverflow.com/questions/19163911/dynamically-setting-tablename-for-sharding-in-sqlalchemy
+    TODO: Sane database design
+    """
+    logging.debug('table_factory_posts() args={0!r}'.format(locals()))# Record arguments.
+    assert(type(board_name) in [str, unicode])
+    table_name = '{0}_posts'.format(board_name)
+    logging.debug('Naming the posts table {0!r}'.format(table_name))
+
+    class Posts(Base):
+        __tablename__ = table_name
+        # From: https://github.com/bibanon/py8chan/blob/master/py8chan/post.py#L13
+        # Use 'p_VarName' format to maybe avoid fuckery. (Name confusion, name collission, reserved keywords such as 'id', etc)
+        # py8chan.Post class attributes
+        p_post_id = sqlalchemy.Column(sqlalchemy.Integer, nullable=True)
+        p_poster_id = sqlalchemy.Column(sqlalchemy.Integer, nullable=True)
+        p_name = sqlalchemy.Column(sqlalchemy.String, nullable=True)
+        p_email = sqlalchemy.Column(sqlalchemy.String, nullable=True)
+        p_tripcode = sqlalchemy.Column(sqlalchemy.String, nullable=True)
+        p_subject = sqlalchemy.Column(sqlalchemy.String, nullable=True)
+        p_comment = sqlalchemy.Column(sqlalchemy.String, nullable=True)
+        p_html_comment = sqlalchemy.Column(sqlalchemy.String, nullable=True)
+        p_text_comment = sqlalchemy.Column(sqlalchemy.String, nullable=True)
+        p_is_op = sqlalchemy.Column(sqlalchemy.Boolean, nullable=True)
+        p_timestamp = sqlalchemy.Column(sqlalchemy.Integer, nullable=True)
+        p_datetime = sqlalchemy.Column(sqlalchemy.Integer, nullable=True)
+        p_first_file = sqlalchemy.Column(sqlalchemy.Integer, nullable=True)# TODO FIXME (File-to-post association)
+        p_all_files = sqlalchemy.Column(sqlalchemy.Integer, nullable=True)# TODO FIXME (File-to-post association)
+        p_extra_files = sqlalchemy.Column(sqlalchemy.Integer, nullable=True)# TODO FIXME (File-to-post association)
+        p_has_file = sqlalchemy.Column(sqlalchemy.Boolean, nullable=True)
+        p_has_extra_files = sqlalchemy.Column(sqlalchemy.Boolean, nullable=True)
+        p_url = sqlalchemy.Column(sqlalchemy.String, nullable=True)
+        # 'Unused' attributes:
+        p_poster_id = sqlalchemy.Column(sqlalchemy.Integer, nullable=True)
+        p_file_deleted = sqlalchemy.Column(sqlalchemy.Boolean, nullable=True)
+        p_semantic_url = sqlalchemy.Column(sqlalchemy.String, nullable=True)
+        p_semantic_slug = sqlalchemy.Column(sqlalchemy.String, nullable=True)
+        # Misc recordkeeping (internal use and also for exporting dumps more easily)
+        row_created = sqlalchemy.Column(sqlalchemy.DateTime, nullable=True, default=datetime.datetime.utcnow)
+        row_updated = sqlalchemy.Column(sqlalchemy.DateTime, nullable=True, onupdate=datetime.datetime.utcnow)
+        primary_key = sqlalchemy.Column(sqlalchemy.Integer, primary_key=True)
+    return Posts
+##Posts = table_factory_posts(board_name='pone')
 
 
 
-# Images table
+# File table
+def table_factory_files(board_name):
+    """ We're Java now!
+    Make the 'x_files' table for an 8chan board.
+    see https://stackoverflow.com/questions/19163911/dynamically-setting-tablename-for-sharding-in-sqlalchemy
+    TODO: Sane database design
+    """
+    logging.debug('table_factory_files() args={0!r}'.format(locals()))# Record arguments.
+    assert(type(board_name) in [str, unicode])
+    table_name = '{0}_files'.format(board_name)
+    logging.debug('Naming the file table {0!r}'.format(table_name))
+
+    class File(Base):
+        __tablename__ = table_name
+        # https://github.com/bibanon/py8chan/blob/master/py8chan/file.py#L15
+        # Use 'm_VarName' format to maybe avoid fuckery. (Name confusion, name collission, reserved keywords such as 'id', etc)
+        # py8chan.File class attributes
+        m_file_md5 = sqlalchemy.Column(sqlalchemy.String, nullable=True)
+        m_file_md5_hex = sqlalchemy.Column(sqlalchemy.String, nullable=True)
+        m_filename_original = sqlalchemy.Column(sqlalchemy.String, nullable=True)
+        m_filename = sqlalchemy.Column(sqlalchemy.String, nullable=True)
+        m_file_url = sqlalchemy.Column(sqlalchemy.String, nullable=True)
+        m_file_extension = sqlalchemy.Column(sqlalchemy.String, nullable=True)
+        m_file_size = sqlalchemy.Column(sqlalchemy.Integer, nullable=True)
+        m_file_width = sqlalchemy.Column(sqlalchemy.Integer, nullable=True)
+        m_file_height = sqlalchemy.Column(sqlalchemy.Integer, nullable=True)
+        m_thumbnail_width = sqlalchemy.Column(sqlalchemy.Integer, nullable=True)
+        m_thumbnail_height = sqlalchemy.Column(sqlalchemy.Integer, nullable=True)
+        m_thumbnail_fname = sqlalchemy.Column(sqlalchemy.String, nullable=True)
+        m_thumbnail_url = sqlalchemy.Column(sqlalchemy.String, nullable=True)
+        # 'Unused' attributes:
+        # Misc recordkeeping: (internal use and also for exporting dumps more easily)
+        row_created = sqlalchemy.Column(sqlalchemy.DateTime, nullable=True, default=datetime.datetime.utcnow)
+        row_updated = sqlalchemy.Column(sqlalchemy.DateTime, nullable=True, onupdate=datetime.datetime.utcnow)
+        primary_key = sqlalchemy.Column(sqlalchemy.Integer, primary_key=True)
+    return File
+##File = table_factory_files(board_name='pone')
 
 
-
-
-
-
-
-
-# Shove things into the DB
-
-
-
-
+def convert_filepath_to_connect_string(filepath):
+    """Convert a SQLite file filepath to a SQLAlchemy connection string"""
+    # Convert windows-style backslashes to required forwardslashes
+    fp_fslash = re.sub(r'\\\\', '/', filepath)
+    connect_string = 'sqlite:///{0}'.format(fp_fslash)
+    return connect_string
 
 
 
 def dev():
     logging.warning('running dev()')
+    board_name = 'pone'
+    db_filepath = os.path.join('temp', '{0}.sqlite'.format(board_name))
+    connection_string = convert_filepath_to_connect_string(filepath=db_filepath)
+    thread_id = 316521 # https://8ch.net/pone/res/316521.html
+    # Prepare board DB classes/table mappers
+    Board = table_factory_board(board_name)
+    Threads = table_factory_threads(board_name)
+    Posts = table_factory_posts(board_name)
+    File = table_factory_files(board_name)
 
+    # Setup/start/connect to DB
+    logging.debug('Connecting to DB')
+    db_dir, db_filename = os.path.split(db_filepath)
+    if len(db_dir) != 0:# Ensure DB has a dir to be put in
+        if not os.path.exists(db_dir):
+            os.makedirs(db_dir)
+    # Start the DB engine
+    engine = sqlalchemy.create_engine(
+        connection_string,# Points SQLAlchemy at a DB
+        echo=True# Output DB commands to log
+    )
+    # Link table/class mapping to DB engine and make sure tables exist.
+    Base.metadata.bind = engine# Link 'declarative' system to our DB
+    Base.metadata.create_all(checkfirst=True)# Create tables based on classes
+    # Create a session to interact with the DB
+    SessionClass = sqlalchemy.orm.sessionmaker(bind=engine)
+    session = SessionClass()
+    # Fetch from the API
+    pone = py8chan.Board(board_name)
+
+    # TODO: Whole board grabbing
+    thread = pone.get_thread(thread_id)
+    print(thread)
+    logging.info('thread={0}'.format(thread))
+    logging.info('thread={0!r}'.format(thread))
+
+    # Shove API data into the DB
+    logging.info('Fake thread insert')
+    # Put thread-level data into DB
+    for post in thread:
+        # Put post-level data into DB
+        logging.info('Fake post insert')
+        for file in post:
+            # Put file-level data into DB
+            logging.info('Fake file insert')
 
 
     logging.warning('exiting dev()')
