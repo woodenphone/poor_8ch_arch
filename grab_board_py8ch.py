@@ -270,6 +270,9 @@ def insert_thread(ses, board_name, board, thread_id, Boards, Threads, Posts, Fil
     for post in thread.all_posts:
         # Put post-level data into DB
         logging.info(u'post={0!r}'.format(post))
+        # Check if post already saved
+        # Insert new post
+        # Alternatively, asagi-style 'postid is primary key' trick to overwrite on insert, skipping extra SELECT operation?
         new_post = Posts(
             p_thread_id = thread_id,
             # py8chan.Post class attributes
@@ -282,7 +285,7 @@ def insert_thread(ses, board_name, board, thread_id, Boards, Threads, Posts, Fil
             p_comment = post.comment,
             p_html_comment = post.html_comment,
             p_text_comment = post.text_comment,
-            p_is_op = post.is_op,
+            p_is_op = (post == thread.topic),# post.is_op,
             p_timestamp = post.timestamp,
             p_datetime = post.datetime,
     ##        p_first_file = sqlalchemy.Column(sqlalchemy.Integer, nullable=True)# TODO FIXME (File-to-post association)
@@ -292,9 +295,9 @@ def insert_thread(ses, board_name, board, thread_id, Boards, Threads, Posts, Fil
             p_has_extra_files = post.has_extra_files,
             p_url = post.url,
             # 'Unused' attributes:
-            p_file_deleted = post.file_deleted ,
-            p_semantic_url = post.semantic_url,
-            p_semantic_slug = post.semantic_slug,
+##            p_file_deleted = post.file_deleted,
+##            p_semantic_url = post.semantic_url,
+##            p_semantic_slug = post.semantic_slug,
         )
         post.post_id
         ses.add(new_post)
@@ -349,7 +352,6 @@ def insert_thread(ses, board_name, board, thread_id, Boards, Threads, Posts, Fil
                 # Insert file row
                 new_file = Files(
                     # py8chan columns
-
 ##                            m_file_md5 = file_md5,
                     m_file_md5_hex = please_unicode(current_file.file_md5_hex),
                     m_filename_original = please_unicode(current_file.filename_original),
