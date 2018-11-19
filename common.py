@@ -175,17 +175,62 @@ def read_file(file_path):
 
 
 
-def generate_filepath(root_path, filename, media_id):
-    """root/type/millions/thousands/id.html"""
-    padded_id_string = str(media_id).zfill(9)
-    millions_section = padded_id_string[0:3]
-    thousands_section = padded_id_string[3:6]
-    file_path = os.path.join(
-        root_path, millions_section, thousands_section, filename
-        )
-    return file_path
+def convert_filepath_to_connect_string(filepath):
+    """Convert a SQLite file filepath to a SQLAlchemy connection string"""
+    # Convert windows-style backslashes to required forwardslashes
+    fp_fslash = re.sub(ur'\\\\', '/', filepath)
+    connect_string = u'sqlite:///{0}'.format(fp_fslash)
+    return connect_string
 
 
+def get_table_from_base(board_name, table_type):
+    """Get the a reference to a table.
+    Uses sqlalchemy Base."""
+    if table_type == u'boards':# Global tables
+        return Base.metadata.tables[u'{0}'.format(table_type)]
+    else:# Board-specific tables
+        return Base.metadata.tables[u'{0}_{1}'.format(board_name, table_type)]
+
+
+def please_utf(text):
+    """Ensure text is unicode"""
+    logging.info(u'text={0!r}'.format(text))
+    if type(text) is unicode:
+        return text
+    elif type(text) is str:
+        encoded = text.encode('utf8')
+        logging.info(u'encoded={0!r}'.format(encoded))
+        return encoded
+    elif type(text) is type(None):
+        return text
+    else:
+        logging.error('please_unicode() only accepts text objects')
+        raise ValueError()
+
+
+def generate_image_filepath_8ch(base, mtype, filename):
+    """Generate the filepath to use for storing a given filename.
+    Consists of variable prefix 'base' and detemanisticly generated subdir.
+    <base>/<MType>/<0,1>/<2,3>/<filename>
+    ex: 'foolfuuka/images/01/23/12345ABCDE.png'
+    TODO: Make more like asagi/foolfuuka for compatability.
+    """
+    return os.path.join(base, mtype, filename[0:2], filename[2:4], filename)
+
+
+def download_file(reqs_ses, url, filepath):
+    res = common.fetch(
+        requests_session=reqs_ses,
+        url=url,
+        method='get',
+        expect_status=200,
+    )
+    common.write_file(# Store page to disk
+        file_path=filepath,
+        data=res.content
+    )
+    logging.debug('Saved {0} to {1}'.format(url, filepath))
+    return
 
 
 def main():
