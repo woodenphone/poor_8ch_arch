@@ -212,7 +212,7 @@ def get_table_from_base(board_name, table_type):
         return Base.metadata.tables[u'{0}_{1}'.format(board_name, table_type)]
 
 
-def please_unicode(text):
+def please_utf(text):
     """Ensure text is unicode"""
     logging.info(u'text={0!r}'.format(text))
     if type(text) is unicode:
@@ -221,14 +221,42 @@ def please_unicode(text):
         encoded = text.encode('utf8')
         logging.info(u'encoded={0!r}'.format(encoded))
         return encoded
+    elif type(text) is type(None):
+        return text
     else:
         logging.error('please_unicode() only accepts text objects')
         raise ValueError()
 
 
-def insert_thread(ses, board_name, board, thread_id, Boards, Threads, Posts, Files):
+def generate_image_filepath(base, filename):
+    """Generate the filepath to use for storing a given filename.
+    Consists of variable prefix 'base' and detemanisticly generated subdir.
+    <base>/<0,1>/<2,3>/<filename>
+    ex: 'images/01/23/12345ABCDE.png'
+    TODO: Make more like asagi/foolfuuka for compatability.
+    """
+    return os.path.join(base, filename[0:2], filename[2:4], filename)
+
+
+def download_file(reqs_ses, url, filepath):
+    res = common.fetch(
+        requests_session=reqs_ses,
+        url=url,
+        method='get',
+        expect_status=200,
+    )
+    common.write_file(# Store page to disk
+        file_path=filepath,
+        data=res.content
+    )
+    logging.debug('Saved {0} to {1}'.format(url, filepath))
+    return
+
+
+def insert_thread(db_ses, board_name, board, thread_id,
+    Boards, Threads, Posts, Files, dl_dir, reqs_ses ):
     """Fetch and insert one thread.
-    ses: Sqlalchemy DB session
+    db_ses: Sqlalchemy DB session
     board: py8chan Board instance
     WARNING: May overwrite existing post/thread data in table!
     TODO: Look into resolutions for this potential issue.
@@ -241,7 +269,7 @@ def insert_thread(ses, board_name, board, thread_id, Boards, Threads, Posts, Fil
 
     # Poll DB for existing posts in this thread
     logging.debug(u'Posts={0!r}'.format(Posts))
-    before_add_posts_q = ses.query(Posts)\
+    before_add_posts_q = db_ses.query(Posts)\
         .filter(Posts.p_thread_id == thread_id)
 
     # Load thread from site
@@ -263,119 +291,126 @@ def insert_thread(ses, board_name, board, thread_id, Boards, Threads, Posts, Fil
 ##        t_all_posts = None,# TODO FIXME (post-to-thread association)
         t_url = thread.url,
     )
-    ses.add(new_thread)
+    db_ses.add(new_thread)
     logging.debug(u'Staged thread entry')
     post_insert_counter = 0# Count number of posts  inserted
     file_insert_counter = 0# Count number of files inserted
     for post in thread.all_posts:
         # Put post-level data into DB
         logging.info(u'post={0!r}'.format(post))
+        post_id = post.post_id
         # Check if post already saved
-        # Insert new post
-        # Alternatively, asagi-style 'postid is primary key' trick to overwrite on insert, skipping extra SELECT operation?
-        new_post = Posts(
-            p_thread_id = thread_id,
-            # py8chan.Post class attributes
-            p_post_id = post.post_id,
-##            p_poster_id = post.poster_id,
-            p_name = post.name,
-            p_email = post.email,
-            p_tripcode = post.tripcode,
-            p_subject = post.subject,
-            p_comment = post.comment,
-            p_html_comment = post.html_comment,
-            p_text_comment = post.text_comment,
-            p_is_op = (post == thread.topic),# post.is_op,
-            p_timestamp = post.timestamp,
-            p_datetime = post.datetime,
-    ##        p_first_file = sqlalchemy.Column(sqlalchemy.Integer, nullable=True)# TODO FIXME (File-to-post association)
-    ##        p_all_files = sqlalchemy.Column(sqlalchemy.Integer, nullable=True)# TODO FIXME (File-to-post association)
-    ##        p_extra_files = sqlalchemy.Column(sqlalchemy.Integer, nullable=True)# TODO FIXME (File-to-post association)
-            p_has_file = post.has_file,
-            p_has_extra_files = post.has_extra_files,
-            p_url = post.url,
-            # 'Unused' attributes:
-##            p_file_deleted = post.file_deleted,
-##            p_semantic_url = post.semantic_url,
-##            p_semantic_slug = post.semantic_slug,
-        )
-        post.post_id
-        ses.add(new_post)
-        logging.debug(u'Staged post entry')
-        post_insert_counter += 1# Count number of posts  inserted
+        post_check_q = db_ses.query(Files)\
+            .filter(Posts.p_thread_id == thread_id,)\
+            .filter(Posts.p_post_id == post_id)
+        post_check_result = post_check_q.first()
+        if post_check_result:
+            logging.debug('Post {0} in thread {1} already saved'.format(post_id, thread_id))
+        else:
+            # Insert new post
+            # Alternatively, asagi-style 'postid is primary key' trick to overwrite on insert, skipping extra SELECT operation?
+            new_post = Posts(
+                p_thread_id = thread_id,
+                # py8chan.Post class attributes
+                p_post_id = post.post_id,
+    ##            p_poster_id = post.poster_id,
+                p_name = please_utf(post.name),
+                p_email = please_utf(post.email),
+                p_tripcode = please_utf(post.tripcode),
+                p_subject = please_utf(post.subject),
+                p_comment = please_utf(post.comment),
+                p_html_comment = please_utf(post.html_comment),
+                p_text_comment = please_utf(post.text_comment),
+                p_is_op = (post == thread.topic),# post.is_op,
+                p_timestamp = post.timestamp,
+                p_datetime = post.datetime,
+        ##        p_first_file = sqlalchemy.Column(sqlalchemy.Integer, nullable=True)# TODO FIXME (File-to-post association)
+        ##        p_all_files = sqlalchemy.Column(sqlalchemy.Integer, nullable=True)# TODO FIXME (File-to-post association)
+        ##        p_extra_files = sqlalchemy.Column(sqlalchemy.Integer, nullable=True)# TODO FIXME (File-to-post association)
+                p_has_file = post.has_file,
+                p_has_extra_files = post.has_extra_files,
+                p_url = please_utf(post.url),
+                # 'Unused' attributes:
+    ##            p_file_deleted = post.file_deleted,
+    ##            p_semantic_url = post.semantic_url,
+    ##            p_semantic_slug = post.semantic_slug,
+            )
+            db_ses.add(new_post)
+            logging.debug(u'Staged post entry')
+            post_insert_counter += 1# Count number of posts  inserted
 
-        # TODO: Insert post to DB
-        if post.has_file:
-            logging.info(u'Post has file(s)')
-            for current_file in post.all_files():
-                # Put file-level data into DB
-                logging.info(u'Fake file insert')
-                logging.info(u'current_file={0!r}'.format(current_file))
+            # Insert post to DB
+            if post.has_file:# TODO: Only add image if post is new
+                logging.info(u'Post has file(s)')
+                for current_file in post.all_files():
+                    # Put file-level data into DB
+                    logging.info(u'current_file={0!r}'.format(current_file))
+                    # Generate paths, names, etc.
+                    file_md5_hex = please_utf(current_file.file_md5_hex)
+                    archive_filename = '{h}.{e}'.format(h=file_md5_hex, e=current_file.file_extension)
+                    archive_filepath = generate_image_filepath(base=dl_dir, filename=archive_filename)
 
-                # TODO Fetch media absent from DB
-                # Check if file has entry in DB (look for md5 and file_saved=True)
-                # If any rows returned, skip download
+                    # Look for existing copies of the file
+                    file_check_q = db_ses.query(Files)\
+                        .filter(Files.m_file_md5_hex == file_md5_hex)
+                    file_check_result = file_check_q.first()
+                    if file_check_result:
+                        file_saved = file_check_result.file_saved# Does archive have file?
+                        thumbnail_saved = file_check_result.thumbnail_saved# Does archive have thumbnail?
+                        forbidden = file_check_result.forbidden# Has archive forbidden file hash?
+                        # Already saved?
+                        if ((file_saved == True) and (thumbnail_saved == True)):
+                            # Do not save if file and thumbnail have been saved.
+                            logging.debug(u'File already saved: {0!r}'.format(current_file))
+                            continue
+                        # Forbidden?
+                        elif (forbidden == True):
+                            # If forbidden, do not permit saving file.
+                            logging.debug(u'File is forbidden: {0!r}, MD5={1!r}'.format(current_file, file_md5_hex))
+                            continue
+                        else:
+                            # We have the file on disk, just point to that.
+                            pass# TODO
+                            archive_filename
+                    else:
+                        # Download is appropriate.
+                        # If neither thumbnail or full file have been saved, and not forbidden, then save the file.
+                        logging.debug(u'Downloading file: {0!r}'.format(current_file))
+                        download_file(
+                            reqs_ses=reqs_ses,
+                            url=current_file.file_url,
+                            filepath=archive_filepath,
+                        )
 
-                # TODO: Skip forbidden images
-                # Check if file has entry in DB (look for md5 and forbidden=True)
-                # If any rows returned, skip download
-                file_md5_hex = please_unicode(current_file.file_md5_hex)
-                file_check_q = ses.query(Files)\
-                    .filter(Files.m_file_md5_hex == file_md5_hex)
-                file_check_result = file_check_q.first()
-                if file_check_result:
-                    file_saved = file_check_result.file_saved# Does archive have file?
-                    thumbnail_saved = file_check_result.thumbnail_saved# Does archive have thumbnail?
-                    forbidden = file_check_result.forbidden# Has archive forbidden file hash?
-                    # Already saved?
-                    if ((file_saved == True) and (thumbnail_saved == True)):
-                        # Do not save if file and thumbnail have been saved.
-                        logging.debug(u'File already saved: {0!r}'.format(current_file))
-                        continue
-                    # Forbidden?
-                    elif (forbidden == True):
-                        # If forbidden, do not permit saving file.
-                        logging.debug(u'File is forbidden: {0!r}, MD5={1!r}'.format(current_file, file_md5_hex))
-                        continue
-                # If neither thumbnail or full file have been saved, and not forbidden, then save the file.
-                logging.debug(u'Downloading file: {0!r}'.format(current_file))
-
-                # Load remote file
-                # TODO
-                logging.warning(u'Simulate requesting file')
-                logging.warning(u'We need to load: {0!r}'.format(current_file.file_url))
-
-                # Save file to disk
-                # TODO
-                logging.warning(u'Simulate storing file')
-
-                # Insert file row
-                new_file = Files(
-                    # py8chan columns
-##                            m_file_md5 = file_md5,
-                    m_file_md5_hex = please_unicode(current_file.file_md5_hex),
-                    m_filename_original = please_unicode(current_file.filename_original),
-                    m_filename = please_unicode(current_file.filename),
-                    m_file_url = please_unicode(current_file.file_url),
-                    m_file_extension = please_unicode(current_file.file_extension),
-                    m_file_size = current_file.file_size,
-                    m_file_width = current_file.file_width,
-                    m_file_height = current_file.file_height,
-                    m_thumbnail_width = current_file.thumbnail_width,
-                    m_thumbnail_height = current_file.thumbnail_height,
-                    m_thumbnail_fname = please_unicode(current_file.thumbnail_fname),
-                    m_thumbnail_url = please_unicode(current_file.thumbnail_url),
-                    # archive-side data (File present on disk? File forbidden?)
-                    file_saved = True,
-                    thumbnail_saved = True,
-                    #forbidden = None # Do not modify any 'forbidden' column values, these are for server admins to set only.
-                )
-                ses.add(new_file)
-                file_insert_counter += 0# Count number of files inserted
-                logging.debug(u'Staged file entry')
+                    # Once we know we have the file on disk, create an entry on the image table
+                    # Insert file row
+                    new_file = Files(
+                        # py8chan columns
+    ##                            m_file_md5 = file_md5,# Difficult to figure out how to convert the string/bytes/whatever
+                        m_file_md5_hex = please_utf(current_file.file_md5_hex),
+                        m_filename_original = please_utf(current_file.filename_original),
+                        m_filename = please_utf(current_file.filename),
+                        m_file_url = please_utf(current_file.file_url),
+                        m_file_extension = please_utf(current_file.file_extension),
+                        m_file_size = current_file.file_size,
+                        m_file_width = current_file.file_width,
+                        m_file_height = current_file.file_height,
+                        m_thumbnail_width = current_file.thumbnail_width,
+                        m_thumbnail_height = current_file.thumbnail_height,
+                        m_thumbnail_fname = please_utf(current_file.thumbnail_fname),
+                        m_thumbnail_url = please_utf(current_file.thumbnail_url),
+                        # archive-side data (File present on disk? File forbidden?)
+                        archive_filename = archive_filename,# Actual disk filename
+                        file_saved = True,
+                        thumbnail_saved = True,
+                        #forbidden = None # Do not modify any 'forbidden' column values, these are for server admins to set only.
+                    )
+                    db_ses.add(new_file)
+                    file_insert_counter += 0# Count number of files inserted
+                    logging.debug(u'Staged file entry')
+                    continue
+                logging.debug(u'Finished this post\'s files')
                 continue
-            logging.debug(u'Finished this post\'s files')
-            continue
         logging.debug(u'Finished this thread\'s posts')
         continue
     logging.info(u'post_insert_counter={0!r}'.format(post_insert_counter))
@@ -386,21 +421,22 @@ def insert_thread(ses, board_name, board, thread_id, Boards, Threads, Posts, Fil
 
 def dev():
     logging.warning(u'running dev()')
+
+    # Set run parameters
     board_name = u'pone'
     db_filepath = os.path.join(u'temp', u'{0}.sqlite'.format(board_name))
     connection_string = convert_filepath_to_connect_string(filepath=db_filepath)
     thread_id = 316521 # https://8ch.net/pone/res/316521.html
+    dl_dir = os.path.join('dl', 'test', '{0}'.format(board_name))
+
+    # Setup requests session
+    reqs_ses = requests.Session()
+
     # Prepare board DB classes/table mappers
     Boards = table_factory_boards()
     Threads = table_factory_threads(board_name)
     Posts = table_factory_posts(board_name)
     Files = table_factory_files(board_name)
-##    lug = Luggage(# TODO FIX THIS TERRIBLE FEELING MONSTROSITY
-##        Boards=Boards,
-##        Threads=Threads,
-##        Posts=Posts,
-##        Files=Files
-##    )
 
     # Setup/start/connect to DB
     logging.debug(u'Connecting to DB')
@@ -419,6 +455,7 @@ def dev():
     # Create a session to interact with the DB
     SessionClass = sqlalchemy.orm.sessionmaker(bind=engine)
     session = SessionClass()
+
     # Fetch from the API
     pone = py8chan.Board(board_name)
 
@@ -427,7 +464,7 @@ def dev():
 
     # Shove API data into the DB
     insert_thread(
-        ses=session,
+        db_ses=session,
         board_name=board_name,
         board=pone,
         thread_id=thread_id,
@@ -435,6 +472,8 @@ def dev():
         Threads=Threads,
         Posts=Posts,
         Files=Files,
+        dl_dir=dl_dir,
+        reqs_ses=reqs_ses,
     )
 
     # Persist data now that thread has been grabbed
