@@ -21,13 +21,13 @@ import re
 # Remote libraries
 import requests# For talking to websites
 import requests.exceptions
-#import py8chan# For talking to 8chan
+import py8chan# For talking to 8chan
 import sqlite3# Because spinning up a new DB is easier this way
 import sqlalchemy# For talking to DBs
 from sqlalchemy.ext.declarative import declarative_base
 # local
 import common
-import py8chanutf as py8chan# For talking to 8chan
+##import py8chanutf as py8chan# For talking to 8chan, but a fork that demands unicode strings
 
 # Global stuff:
 Base = declarative_base()# Setup system to keep track of tables and classes
@@ -47,11 +47,11 @@ def table_factory_boards():# Boards table
         __tablename__ = table_name
         # From: https://github.com/bibanon/py8chan/blob/master/py8chan/board.py#L76
         # Use 'b_VarName' format to maybe avoid fuckery. (Name confusion, name collission, reserved keywords such as 'id', etc)
-        b_name = sqlalchemy.Column(sqlalchemy.Integer, nullable=True)
-        b_title = sqlalchemy.Column(sqlalchemy.Integer, nullable=True)
+        b_id = sqlalchemy.Column(sqlalchemy.Integer, nullable=True, unique=True)
+        b_name = sqlalchemy.Column(sqlalchemy.Unicode, nullable=True)
+        b_title = sqlalchemy.Column(sqlalchemy.Unicode, nullable=True)
         b_is_worksafe = sqlalchemy.Column(sqlalchemy.Boolean, nullable=True)
         b_page_count= sqlalchemy.Column(sqlalchemy.Integer, nullable=True)
-        b_title = sqlalchemy.Column(sqlalchemy.Integer, nullable=True)
         b_threads_per_page = sqlalchemy.Column(sqlalchemy.Integer, nullable=True)
         # Misc recordkeeping (internal use and also for exporting dumps more easily)
         row_created = sqlalchemy.Column(sqlalchemy.DateTime, nullable=True, default=datetime.datetime.utcnow)
@@ -74,16 +74,16 @@ def table_factory_threads(board_name):# Threads table
         __tablename__ = table_name
         # From: https://github.com/bibanon/py8chan/blob/master/py8chan/thread.py#L10
         # Use 't_VarName' format to maybe avoid fuckery. (Name confusion, name collission, reserved keywords such as 'id', etc)
-        t_thread_id = sqlalchemy.Column(sqlalchemy.Integer, nullable=True)
+        t_thread_id = sqlalchemy.Column(sqlalchemy.Integer, nullable=True, unique=True)
         t_board = sqlalchemy.Column(sqlalchemy.Integer, nullable=True)
-        t_last_reply_id = sqlalchemy.Column(sqlalchemy.Integer, nullable=True)
+        t_last_reply_id = sqlalchemy.Column(sqlalchemy.Integer, nullable=True, unique=True)
         # py8chan.Thread class attributes
         t_closed = sqlalchemy.Column(sqlalchemy.Boolean, nullable=True)
         t_sticky = sqlalchemy.Column(sqlalchemy.Unicode, nullable=True)
         t_topic = sqlalchemy.Column(sqlalchemy.Unicode, nullable=True)
-        t_posts = sqlalchemy.Column(sqlalchemy.Unicode, nullable=True)# TODO FIXME (post-to-thread association)
-        t_all_posts = sqlalchemy.Column(sqlalchemy.Unicode, nullable=True)# TODO FIXME (post-to-thread association)
-        t_url = sqlalchemy.Column(sqlalchemy.Unicode, nullable=True)
+##        t_posts = sqlalchemy.Column(sqlalchemy.Unicode, nullable=True)# TODO FIXME (post-to-thread association)
+##        t_all_posts = sqlalchemy.Column(sqlalchemy.Unicode, nullable=True)# TODO FIXME (post-to-thread association)
+        t_url = sqlalchemy.Column(sqlalchemy.Unicode, nullable=True, unique=True)
         # 'Unused' attributes:
         # Misc recordkeeping: (internal use and also for exporting dumps more easily)
         row_created = sqlalchemy.Column(sqlalchemy.DateTime, nullable=True, default=datetime.datetime.utcnow)
@@ -109,7 +109,7 @@ def table_factory_posts(board_name):# Posts table
         # Use 'p_VarName' format to maybe avoid fuckery. (Name confusion, name collission, reserved keywords such as 'id', etc)
         p_thread_id = sqlalchemy.Column(sqlalchemy.Integer, nullable=True)
         # py8chan.Post class attributes
-        p_post_id = sqlalchemy.Column(sqlalchemy.Integer, nullable=True)
+        p_post_id = sqlalchemy.Column(sqlalchemy.Integer, nullable=True, unique=True)
         p_poster_id = sqlalchemy.Column(sqlalchemy.Integer, nullable=True)
         p_name = sqlalchemy.Column(sqlalchemy.Unicode, nullable=True)
         p_email = sqlalchemy.Column(sqlalchemy.Unicode, nullable=True)
@@ -121,17 +121,17 @@ def table_factory_posts(board_name):# Posts table
         p_is_op = sqlalchemy.Column(sqlalchemy.Boolean, nullable=True)
         p_timestamp = sqlalchemy.Column(sqlalchemy.Integer, nullable=True)
         p_datetime = sqlalchemy.Column(sqlalchemy.Integer, nullable=True)
-        p_first_file = sqlalchemy.Column(sqlalchemy.Integer, nullable=True)# TODO FIXME (File-to-post association)
-        p_all_files = sqlalchemy.Column(sqlalchemy.Integer, nullable=True)# TODO FIXME (File-to-post association)
-        p_extra_files = sqlalchemy.Column(sqlalchemy.Integer, nullable=True)# TODO FIXME (File-to-post association)
+##        p_first_file = sqlalchemy.Column(sqlalchemy.Integer, nullable=True)# TODO FIXME (File-to-post association)
+##        p_all_files = sqlalchemy.Column(sqlalchemy.Integer, nullable=True)# TODO FIXME (File-to-post association)
+##        p_extra_files = sqlalchemy.Column(sqlalchemy.Integer, nullable=True)# TODO FIXME (File-to-post association)
         p_has_file = sqlalchemy.Column(sqlalchemy.Boolean, nullable=True)
         p_has_extra_files = sqlalchemy.Column(sqlalchemy.Boolean, nullable=True)
-        p_url = sqlalchemy.Column(sqlalchemy.Unicode, nullable=True)
+        p_url = sqlalchemy.Column(sqlalchemy.Unicode, nullable=True, unique=True)
         # 'Unused' attributes:
         p_poster_id = sqlalchemy.Column(sqlalchemy.Integer, nullable=True)
         p_file_deleted = sqlalchemy.Column(sqlalchemy.Boolean, nullable=True)
-        p_semantic_url = sqlalchemy.Column(sqlalchemy.Unicode, nullable=True)
-        p_semantic_slug = sqlalchemy.Column(sqlalchemy.Unicode, nullable=True)
+        p_semantic_url = sqlalchemy.Column(sqlalchemy.Unicode, nullable=True, unique=True)
+        p_semantic_slug = sqlalchemy.Column(sqlalchemy.Unicode, nullable=True, unique=True)
         # Misc recordkeeping (internal use and also for exporting dumps more easily)
         row_created = sqlalchemy.Column(sqlalchemy.DateTime, nullable=True, default=datetime.datetime.utcnow)
         row_updated = sqlalchemy.Column(sqlalchemy.DateTime, nullable=True, onupdate=datetime.datetime.utcnow)
@@ -153,9 +153,9 @@ def table_factory_files(board_name):# File table
         __tablename__ = table_name
         # https://github.com/bibanon/py8chan/blob/master/py8chan/file.py#L15
         # Use 'm_VarName' format to maybe avoid fuckery. (Name confusion, name collission, reserved keywords such as 'id', etc)
-        m_post_id = sqlalchemy.Column(sqlalchemy.Integer, nullable=True)# TODO: Make this a foreign key linked to posts table
+        m_post_id = sqlalchemy.Column(sqlalchemy.Integer, nullable=True, unique=True)# TODO: Make this a foreign key linked to posts table
         # py8chan.File class attributes
-        m_file_md5 = sqlalchemy.Column(sqlalchemy.Unicode, nullable=True)
+##        m_file_md5 = sqlalchemy.Column(sqlalchemy.Unicode, nullable=True)# This causes encoding fuckery, let's use the hex version instead.
         m_file_md5_hex = sqlalchemy.Column(sqlalchemy.Unicode, nullable=True)
         m_filename_original = sqlalchemy.Column(sqlalchemy.Unicode, nullable=True)
         m_filename = sqlalchemy.Column(sqlalchemy.Unicode, nullable=True)
@@ -212,6 +212,20 @@ def get_table_from_base(board_name, table_type):
         return Base.metadata.tables[u'{0}_{1}'.format(board_name, table_type)]
 
 
+def please_unicode(text):
+    """Ensure text is unicode"""
+    logging.info(u'text={0!r}'.format(text))
+    if type(text) is unicode:
+        return text
+    elif type(text) is str:
+        encoded = text.encode('utf8')
+        logging.info(u'encoded={0!r}'.format(encoded))
+        return encoded
+    else:
+        logging.error('please_unicode() only accepts text objects')
+        raise ValueError()
+
+
 def insert_thread(ses, board_name, board, thread_id, Boards, Threads, Posts, Files):
     """Fetch and insert one thread.
     ses: Sqlalchemy DB session
@@ -245,27 +259,52 @@ def insert_thread(ses, board_name, board, thread_id, Boards, Threads, Posts, Fil
         t_closed = thread.closed,
         t_sticky = thread.sticky,
         t_topic = thread.topic.post_id,# TODO Figure out what we want to do here. (Should we even put a topic entry in here? (If so, make foreign key?))
-        t_posts = None,# TODO FIXME (post-to-thread association)
-        t_all_posts = None,# TODO FIXME (post-to-thread association)
+##        t_posts = None,# TODO FIXME (post-to-thread association)
+##        t_all_posts = None,# TODO FIXME (post-to-thread association)
         t_url = thread.url,
     )
     ses.add(new_thread)
     logging.debug(u'Staged thread entry')
-
-    for current_post in thread.all_posts:
+    post_insert_counter = 0# Count number of posts  inserted
+    file_insert_counter = 0# Count number of files inserted
+    for post in thread.all_posts:
         # Put post-level data into DB
-        logging.info(u'current_post={0!r}'.format(current_post))
+        logging.info(u'post={0!r}'.format(post))
         new_post = Posts(
             p_thread_id = thread_id,
+            # py8chan.Post class attributes
+            p_post_id = post.post_id,
+##            p_poster_id = post.poster_id,
+            p_name = post.name,
+            p_email = post.email,
+            p_tripcode = post.tripcode,
+            p_subject = post.subject,
+            p_comment = post.comment,
+            p_html_comment = post.html_comment,
+            p_text_comment = post.text_comment,
+            p_is_op = post.is_op,
+            p_timestamp = post.timestamp,
+            p_datetime = post.datetime,
+    ##        p_first_file = sqlalchemy.Column(sqlalchemy.Integer, nullable=True)# TODO FIXME (File-to-post association)
+    ##        p_all_files = sqlalchemy.Column(sqlalchemy.Integer, nullable=True)# TODO FIXME (File-to-post association)
+    ##        p_extra_files = sqlalchemy.Column(sqlalchemy.Integer, nullable=True)# TODO FIXME (File-to-post association)
+            p_has_file = post.has_file,
+            p_has_extra_files = post.has_extra_files,
+            p_url = post.url,
+            # 'Unused' attributes:
+            p_file_deleted = post.file_deleted ,
+            p_semantic_url = post.semantic_url,
+            p_semantic_slug = post.semantic_slug,
         )
-        current_post.post_id
+        post.post_id
         ses.add(new_post)
         logging.debug(u'Staged post entry')
+        post_insert_counter += 1# Count number of posts  inserted
 
         # TODO: Insert post to DB
-        if current_post.has_file:
+        if post.has_file:
             logging.info(u'Post has file(s)')
-            for current_file in current_post.all_files():
+            for current_file in post.all_files():
                 # Put file-level data into DB
                 logging.info(u'Fake file insert')
                 logging.info(u'current_file={0!r}'.format(current_file))
@@ -277,13 +316,9 @@ def insert_thread(ses, board_name, board, thread_id, Boards, Threads, Posts, Fil
                 # TODO: Skip forbidden images
                 # Check if file has entry in DB (look for md5 and forbidden=True)
                 # If any rows returned, skip download
-
-
-                logging.info(u'current_file.file_md5={0!r}'.format(current_file.file_md5))
-                logging.info(u'type(current_file.file_md5)={0!r}'.format(type(current_file.file_md5)))
-
+                file_md5_hex = please_unicode(current_file.file_md5_hex)
                 file_check_q = ses.query(Files)\
-                    .filter(Files.m_file_md5 == current_file.file_md5)
+                    .filter(Files.m_file_md5_hex == file_md5_hex)
                 file_check_result = file_check_q.first()
                 if file_check_result:
                     file_saved = file_check_result.file_saved# Does archive have file?
@@ -297,48 +332,52 @@ def insert_thread(ses, board_name, board, thread_id, Boards, Threads, Posts, Fil
                     # Forbidden?
                     elif (forbidden == True):
                         # If forbidden, do not permit saving file.
-                        logging.debug(u'File is forbidden: {0!r}, MD5={1!r}'.format(current_file, current_file.file_md5))
+                        logging.debug(u'File is forbidden: {0!r}, MD5={1!r}'.format(current_file, file_md5_hex))
                         continue
-                    else:
-                        # If neither thumbnail or full file have been saved, and not forbidden, then save the file.
-                        logging.debug(u'Downloading file: {0!r}'.format(current_file))
+                # If neither thumbnail or full file have been saved, and not forbidden, then save the file.
+                logging.debug(u'Downloading file: {0!r}'.format(current_file))
 
-                        # Load remote file
-                        # TODO
-                        logging.warning(u'Simulate requesting file')
+                # Load remote file
+                # TODO
+                logging.warning(u'Simulate requesting file')
+                logging.warning(u'We need to load: {0!r}'.format(current_file.file_url))
 
-                        # Save file to disk
-                        # TODO
-                        logging.warning(u'Simulate storing file')
+                # Save file to disk
+                # TODO
+                logging.warning(u'Simulate storing file')
 
-                        # Insert file row
-                        new_file = File(
-                        # py8chan columns
-                            m_file_md5 = current_file.file_md5,
-                            m_file_md5_hex = current_file.file_md5_hex,
-                            m_filename_original = current_file.filename_original,
-                            m_filename = current_file.filename,
-                            m_file_url = current_file.file_url,
-                            m_file_extension = current_file.file_extension,
-                            m_file_size = current_file.file_size,
-                            m_file_width = current_file.file_width,
-                            m_file_height = current_file.file_height,
-                            m_thumbnail_width = current_file.thumbnail_width,
-                            m_thumbnail_height = current_file.thumbnail_height,
-                            m_thumbnail_fname = current_file.thumbnail_fname,
-                            m_thumbnail_url = current_file.thumbnail_url,
-                            # archive-side data (File present on disk? File forbidden?)
-                            file_saved = True,
-                            thumbnail_saved=True,
-                            forbidden = True
-                        )
-                        ses.add(new_file)
-                        logging.debug(u'Staged file entry')
+                # Insert file row
+                new_file = Files(
+                    # py8chan columns
+
+##                            m_file_md5 = file_md5,
+                    m_file_md5_hex = please_unicode(current_file.file_md5_hex),
+                    m_filename_original = please_unicode(current_file.filename_original),
+                    m_filename = please_unicode(current_file.filename),
+                    m_file_url = please_unicode(current_file.file_url),
+                    m_file_extension = please_unicode(current_file.file_extension),
+                    m_file_size = current_file.file_size,
+                    m_file_width = current_file.file_width,
+                    m_file_height = current_file.file_height,
+                    m_thumbnail_width = current_file.thumbnail_width,
+                    m_thumbnail_height = current_file.thumbnail_height,
+                    m_thumbnail_fname = please_unicode(current_file.thumbnail_fname),
+                    m_thumbnail_url = please_unicode(current_file.thumbnail_url),
+                    # archive-side data (File present on disk? File forbidden?)
+                    file_saved = True,
+                    thumbnail_saved = True,
+                    #forbidden = None # Do not modify any 'forbidden' column values, these are for server admins to set only.
+                )
+                ses.add(new_file)
+                file_insert_counter += 0# Count number of files inserted
+                logging.debug(u'Staged file entry')
                 continue
             logging.debug(u'Finished this post\'s files')
             continue
         logging.debug(u'Finished this thread\'s posts')
         continue
+    logging.info(u'post_insert_counter={0!r}'.format(post_insert_counter))
+    logging.info(u'file_insert_counter={0!r}'.format(file_insert_counter))
     logging.info(u'Fetched thread')
     return
 
