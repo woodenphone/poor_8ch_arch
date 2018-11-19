@@ -21,13 +21,13 @@ import re
 # Remote libraries
 import requests# For talking to websites
 import requests.exceptions
-import py8chan# For talking to 8chan
+#import py8chan# For talking to 8chan
 import sqlite3# Because spinning up a new DB is easier this way
 import sqlalchemy# For talking to DBs
 from sqlalchemy.ext.declarative import declarative_base
 # local
 import common
-
+import py8chanutf as py8chan# For talking to 8chan
 
 # Global stuff:
 Base = declarative_base()# Setup system to keep track of tables and classes

@@ -1,6 +1,13 @@
+# dirs
 debug/
 download/
 git_ignored/
 temp/
+py8chan/
+py8chanutf/
+
+# junk
 *.pyc
+
+# Config files
 *_config.py
