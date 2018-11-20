@@ -44,6 +44,36 @@ def table_factory_boards(Base):# Boards table
 
 
 
+def table_factory_threads(Base, board_name):# Threads table
+    """We're Java now!
+    Make the 'x_threads' table for a 4chan board.
+    see https://stackoverflow.com/questions/19163911/dynamically-setting-tablename-for-sharding-in-sqlalchemy
+    TODO: Sane database design"""
+    logging.debug(u'table_factory_threads() args={0!r}'.format(locals()))# Record arguments.
+    assert(type(board_name) in [unicode])
+    table_name = u'{0}_threads'.format(board_name)
+    logging.debug(u'Naming the thread table {0!r}'.format(table_name))
+    class Threads(Base):
+        __tablename__ = table_name
+        # from asagi boards.sql
+        thread_num = sqlalchemy.Column(sqlalchemy.Integer, primary_key=True)
+        time_op = sqlalchemy.Column(sqlalchemy.Integer, nullable=False)
+        time_last = sqlalchemy.Column(sqlalchemy.Integer, nullable=False)
+        time_bump = sqlalchemy.Column(sqlalchemy.Integer, nullable=False)
+        time_ghost = sqlalchemy.Column(sqlalchemy.Integer, nullable=True)
+        time_ghost_bump = sqlalchemy.Column(sqlalchemy.Integer, nullable=True)
+        time_last_modified = sqlalchemy.Column(sqlalchemy.Integer, nullable=False)
+        nreplies = sqlalchemy.Column(sqlalchemy.Integer, nullable=False, default=0)
+        nimages = sqlalchemy.Column(sqlalchemy.Integer, nullable=False, default=0)
+        sticky = sqlalchemy.Column(sqlalchemy.Boolean, nullable=False, default=False)
+        locked = sqlalchemy.Column(sqlalchemy.Boolean, nullable=False, default=False)
+        # Misc recordkeeping: (internal use and also for exporting dumps more easily)
+        row_created = sqlalchemy.Column(sqlalchemy.DateTime, nullable=True, default=datetime.datetime.utcnow)
+        row_updated = sqlalchemy.Column(sqlalchemy.DateTime, nullable=True, onupdate=datetime.datetime.utcnow)
+    return Threads
+
+
+
 def table_factory_posts(Base, board_name):# Posts table
     """We're Java now!
     Make the 'x_threads' table for an 4chan board.
@@ -93,35 +123,6 @@ def table_factory_posts(Base, board_name):# Posts table
         row_updated = sqlalchemy.Column(sqlalchemy.DateTime, nullable=True, onupdate=datetime.datetime.utcnow)
     return Posts
 
-
-
-def table_factory_threads(Base, board_name):# Threads table
-    """We're Java now!
-    Make the 'x_threads' table for a 4chan board.
-    see https://stackoverflow.com/questions/19163911/dynamically-setting-tablename-for-sharding-in-sqlalchemy
-    TODO: Sane database design"""
-    logging.debug(u'table_factory_threads() args={0!r}'.format(locals()))# Record arguments.
-    assert(type(board_name) in [unicode])
-    table_name = u'{0}_threads'.format(board_name)
-    logging.debug(u'Naming the thread table {0!r}'.format(table_name))
-    class Threads(Base):
-        __tablename__ = table_name
-        # from asagi boards.sql
-        thread_num = sqlalchemy.Column(sqlalchemy.Integer, primary_key=True)
-        time_op = sqlalchemy.Column(sqlalchemy.Integer, nullable=False)
-        time_last = sqlalchemy.Column(sqlalchemy.Integer, nullable=False)
-        time_bump = sqlalchemy.Column(sqlalchemy.Integer, nullable=False)
-        time_ghost = sqlalchemy.Column(sqlalchemy.Integer, nullable=True)
-        time_ghost_bump = sqlalchemy.Column(sqlalchemy.Integer, nullable=True)
-        time_last_modified = sqlalchemy.Column(sqlalchemy.Integer, nullable=False)
-        nreplies = sqlalchemy.Column(sqlalchemy.Integer, nullable=False, default=0)
-        nimages = sqlalchemy.Column(sqlalchemy.Integer, nullable=False, default=0)
-        sticky = sqlalchemy.Column(sqlalchemy.Boolean, nullable=False, default=False)
-        locked = sqlalchemy.Column(sqlalchemy.Boolean, nullable=False, default=False)
-        # Misc recordkeeping: (internal use and also for exporting dumps more easily)
-        row_created = sqlalchemy.Column(sqlalchemy.DateTime, nullable=True, default=datetime.datetime.utcnow)
-        row_updated = sqlalchemy.Column(sqlalchemy.DateTime, nullable=True, onupdate=datetime.datetime.utcnow)
-    return Threads
 
 
 def table_factory_images(Base, board_name):# images table

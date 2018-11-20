@@ -144,7 +144,7 @@ def process_post(db_ses, board_name, board, thread_id,
             p_comment = common.please_utf(post.comment),
             p_html_comment = common.please_utf(post.html_comment),
             p_text_comment = common.please_utf(post.text_comment),
-            p_is_op = (post == thread.topic),# post.is_op,
+            p_is_op = (post == thread.topic),# post.is_op, # TODO: Verify this is correct, what are these values and is the comparison appropriate to generate the column?
             p_timestamp = post.timestamp,
             p_datetime = post.datetime,
             p_has_file = post.has_file,
@@ -193,8 +193,8 @@ def process_thread(db_ses, board_name, board, thread_id,
     if (thread_check_result):
         # UPDATE thread entry
         sqlalchemy.update(Threads)\
-            .where(Threads.primary_key == thread_check_result.primary_key)\
-            .values(
+        .where(Threads.primary_key == thread_check_result.primary_key)\
+        .values(
             t_thread_id = thread.id,
             t_board = 0,# TODO Foreign key (thread-to-board association)
             t_last_reply_id = thread.last_reply_id,
@@ -207,7 +207,7 @@ def process_thread(db_ses, board_name, board, thread_id,
     else:
         # INSERT thread entry
         sqlalchemy.insert(Threads)\
-            .values(
+        .values(
             t_thread_id = thread.id,
             t_board = 0,# TODO Foreign key (thread-to-board association)
             t_last_reply_id = thread.last_reply_id,

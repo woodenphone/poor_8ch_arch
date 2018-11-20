@@ -153,15 +153,6 @@ def table_factory_files(Base, board_name):# File table
 
 
 
-
-
-
-
-
-
-
-
-
 def main():
     pass
 
